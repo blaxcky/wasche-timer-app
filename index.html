@@ -55,20 +55,8 @@
         );
 
         const LaundryTimerApp = () => {
-            // Funktion zum Laden der Timer aus localStorage
+            // Funktion zum Laden der Timer (ohne localStorage für Claude.ai)
             const getInitialTimers = () => {
-                try {
-                    const storedTimers = localStorage.getItem('laundryTimers');
-                    if (storedTimers) {
-                        // Wichtig: startTime muss wieder in ein Date-Objekt umgewandelt werden
-                        return JSON.parse(storedTimers).map(timer => ({
-                            ...timer,
-                            startTime: new Date(timer.startTime)
-                        }));
-                    }
-                } catch (e) {
-                    console.error("Fehler beim Laden der Timer aus localStorage:", e);
-                }
                 return [];
             };
 
@@ -78,19 +66,13 @@
             // currentTime wird jede Sekunde aktualisiert, um die Timer-Anzeige zu aktualisieren
             const [currentTime, setCurrentTime] = useState(new Date());
 
-            // Effekt zum Speichern der Timer in localStorage, wann immer sich die "timers"-Liste ändert
-            useEffect(() => {
-                localStorage.setItem('laundryTimers', JSON.stringify(timers));
-            }, [timers]);
-
             // Effekt zum Aktualisieren der currentTime jede Sekunde
             useEffect(() => {
                 const interval = setInterval(() => {
                     setCurrentTime(new Date());
                 }, 1000);
                 return () => clearInterval(interval);
-            }, []); // Leeres Array bedeutet, dass dieser Effekt nur einmal beim Mounten ausgeführt wird
-
+            }, []);
 
             // Neue Wäscheladung hinzufügen und direkt starten
             const addNewLoad = () => {
@@ -98,8 +80,8 @@
                     const newTimer = {
                         id: Date.now(),
                         name: newLoadName,
-                        startTime: new Date(), // Speichern als Date-Objekt, JSON.stringify wandelt es in String um
-                        completedElapsedTime: null, // Wird nur bei Abschluss gesetzt
+                        startTime: new Date(),
+                        completedElapsedTime: null,
                         isCompleted: false
                     };
                     setTimers([...timers, newTimer]);
@@ -112,7 +94,6 @@
                 setTimers(prevTimers =>
                     prevTimers.map(timer => {
                         if (timer.id === id) {
-                            // Berechne die finale verstrichene Zeit beim Abschluss
                             const finalElapsedTime = Math.floor((currentTime.getTime() - timer.startTime.getTime()) / 1000);
                             return {
                                 ...timer,
@@ -150,18 +131,17 @@
                     <div className="max-w-4xl mx-auto">
                         {/* Header */}
                         <div className="text-center mb-8">
-                            <h1 className="text-4xl font-bold text-gray-800 mb-2 flex items-center justify-center gap-3">
+                            <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-2 flex items-center justify-center gap-3">
                                 <Clock size={40} className="text-blue-600" />
                                 Wäsche-Timer
                             </h1>
-                            <p className="text-gray-600">Verfolgen Sie die Trockenzeit Ihrer Wäsche am Wäscheständer</p>
+                            <p className="text-gray-600 text-sm sm:text-base">Verfolgen Sie die Trockenzeit Ihrer Wäsche am Wäscheständer</p>
                         </div>
 
                         {/* Neue Wäscheladung hinzufügen */}
-                        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                            <h2 className="text-xl font-semibold mb-4 text-gray-800">Neue Wäscheladung</h2>
-                            {/* GEÄNDERTER BEREICH START */}
-                            <div className="flex flex-col gap-3"> {/* Geändert: flex-col hinzugefügt */}
+                        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+                            <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800">Neue Wäscheladung</h2>
+                            <div className="flex flex-col sm:flex-row gap-3">
                                 <input
                                     type="text"
                                     value={newLoadName}
@@ -172,19 +152,17 @@
                                 />
                                 <button
                                     onClick={addNewLoad}
-                                    className="w-full px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2" {/* Geändert: w-full und justify-center hinzugefügt */}
+                                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
                                 >
                                     <Plus size={20} />
                                     Starten
                                 </button>
                             </div>
-                            {/* GEÄNDERTER BEREICH ENDE */}
                         </div>
 
                         {/* Aktive Timer */}
                         <div className="space-y-4">
                             {timers.map(timer => {
-                                // Dynamische Berechnung der verstrichenen Zeit
                                 const currentElapsedTime = timer.isCompleted
                                     ? timer.completedElapsedTime
                                     : Math.floor((currentTime.getTime() - timer.startTime.getTime()) / 1000);
@@ -192,16 +170,16 @@
                                 return (
                                     <div
                                         key={timer.id}
-                                        className={`bg-white rounded-lg shadow-md p-6 transition-all ${
+                                        className={`bg-white rounded-lg shadow-md p-4 sm:p-6 transition-all ${
                                             timer.isCompleted ? 'opacity-75 bg-green-50' : ''
                                         }`}
                                     >
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex-1">
-                                                <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                                                    {timer.name}
+                                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="text-lg font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                                                    <span className="truncate">{timer.name}</span>
                                                     {timer.isCompleted && (
-                                                        <CheckCircle className="inline ml-2 text-green-600" size={20} />
+                                                        <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
                                                     )}
                                                 </h3>
                                                 <p className="text-sm text-gray-500">
@@ -209,8 +187,8 @@
                                                 </p>
                                             </div>
                                             
-                                            <div className="text-center mx-6">
-                                                <div className="text-3xl font-mono font-bold text-gray-800">
+                                            <div className="text-center sm:mx-6 w-full sm:w-auto">
+                                                <div className="text-2xl sm:text-3xl font-mono font-bold text-gray-800">
                                                     {formatTime(currentElapsedTime)}
                                                 </div>
                                                 <div className="text-sm text-gray-500">
@@ -218,11 +196,12 @@
                                                 </div>
                                             </div>
 
-                                            <div className="flex gap-2">
+                                            <div className="flex gap-2 w-full sm:w-auto justify-end">
                                                 {!timer.isCompleted && (
                                                     <button
                                                         onClick={() => completeTimer(timer.id)}
                                                         className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
+                                                        title="Als fertig markieren"
                                                     >
                                                         <CheckCircle size={20} />
                                                     </button>
@@ -231,6 +210,7 @@
                                                 <button
                                                     onClick={() => deleteTimer(timer.id)}
                                                     className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                                                    title="Timer löschen"
                                                 >
                                                     <Trash2 size={20} />
                                                 </button>
@@ -247,7 +227,7 @@
                                 <h3 className="text-xl font-semibold text-gray-600 mb-2">
                                     Noch keine Wäsche am Trocknen
                                 </h3>
-                                <p className="text-gray-500">
+                                <p className="text-gray-500 px-4">
                                     Fügen Sie Ihre erste Wäscheladung hinzu, um mit dem Tracking zu beginnen.
                                 </p>
                             </div>
@@ -259,7 +239,7 @@
 
         ReactDOM.render(<LaundryTimerApp />, document.getElementById('root'));
 
-        // Service Worker registrieren (unverändert)
+        // Service Worker registrieren
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('data:text/javascript,const CACHE_NAME="laundry-timer-v1";const urlsToCache=["/"];self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(urlsToCache)))});self.addEventListener("fetch",event=>{event.respondWith(caches.match(event.request).then(response=>{if(response){return response}return fetch(event.request)}))});')
                 .then(registration => console.log('SW registered'))
