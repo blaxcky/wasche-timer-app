@@ -55,28 +55,42 @@
         );
 
         const LaundryTimerApp = () => {
-            const [timers, setTimers] = useState([]);
-            const [newLoadName, setNewLoadName] = useState('');
-            const [activeTimers, setActiveTimers] = useState({});
+            // Funktion zum Laden der Timer aus localStorage
+            const getInitialTimers = () => {
+                try {
+                    const storedTimers = localStorage.getItem('laundryTimers');
+                    if (storedTimers) {
+                        // Wichtig: startTime muss wieder in ein Date-Objekt umgewandelt werden
+                        return JSON.parse(storedTimers).map(timer => ({
+                            ...timer,
+                            startTime: new Date(timer.startTime)
+                        }));
+                    }
+                } catch (e) {
+                    console.error("Fehler beim Laden der Timer aus localStorage:", e);
+                }
+                return [];
+            };
 
-            // Timer-Logik
+            const [timers, setTimers] = useState(getInitialTimers);
+            const [newLoadName, setNewLoadName] = useState('');
+            
+            // currentTime wird jede Sekunde aktualisiert, um die Timer-Anzeige zu aktualisieren
+            const [currentTime, setCurrentTime] = useState(new Date());
+
+            // Effekt zum Speichern der Timer in localStorage, wann immer sich die "timers"-Liste ändert
+            useEffect(() => {
+                localStorage.setItem('laundryTimers', JSON.stringify(timers));
+            }, [timers]);
+
+            // Effekt zum Aktualisieren der currentTime jede Sekunde
             useEffect(() => {
                 const interval = setInterval(() => {
-                    setTimers(prevTimers => 
-                        prevTimers.map(timer => {
-                            if (activeTimers[timer.id] && !timer.isCompleted) {
-                                return {
-                                    ...timer,
-                                    elapsedTime: timer.elapsedTime + 1
-                                };
-                            }
-                            return timer;
-                        })
-                    );
+                    setCurrentTime(new Date());
                 }, 1000);
-
                 return () => clearInterval(interval);
-            }, [activeTimers]);
+            }, []); // Leeres Array bedeutet, dass dieser Effekt nur einmal beim Mounten ausgeführt wird
+
 
             // Neue Wäscheladung hinzufügen und direkt starten
             const addNewLoad = () => {
@@ -84,15 +98,11 @@
                     const newTimer = {
                         id: Date.now(),
                         name: newLoadName,
-                        startTime: new Date(),
-                        elapsedTime: 0,
+                        startTime: new Date(), // Speichern als Date-Objekt, JSON.stringify wandelt es in String um
+                        completedElapsedTime: null, // Wird nur bei Abschluss gesetzt
                         isCompleted: false
                     };
                     setTimers([...timers, newTimer]);
-                    setActiveTimers(prev => ({
-                        ...prev,
-                        [newTimer.id]: true
-                    }));
                     setNewLoadName('');
                 }
             };
@@ -100,28 +110,27 @@
             // Timer als fertig markieren
             const completeTimer = (id) => {
                 setTimers(prevTimers =>
-                    prevTimers.map(timer =>
-                        timer.id === id ? { ...timer, isCompleted: true } : timer
-                    )
+                    prevTimers.map(timer => {
+                        if (timer.id === id) {
+                            // Berechne die finale verstrichene Zeit beim Abschluss
+                            const finalElapsedTime = Math.floor((currentTime.getTime() - timer.startTime.getTime()) / 1000);
+                            return {
+                                ...timer,
+                                isCompleted: true,
+                                completedElapsedTime: finalElapsedTime
+                            };
+                        }
+                        return timer;
+                    })
                 );
-                setActiveTimers(prev => {
-                    const newActive = { ...prev };
-                    delete newActive[id];
-                    return newActive;
-                });
             };
 
             // Timer löschen
             const deleteTimer = (id) => {
                 setTimers(prevTimers => prevTimers.filter(timer => timer.id !== id));
-                setActiveTimers(prev => {
-                    const newActive = { ...prev };
-                    delete newActive[id];
-                    return newActive;
-                });
             };
 
-            // Zeit formatieren mit Tagen und Stunden
+            // Zeit formatieren mit Tagen, Stunden, Minuten und Sekunden
             const formatTime = (seconds) => {
                 const days = Math.floor(seconds / 86400);
                 const hours = Math.floor((seconds % 86400) / 3600);
@@ -172,53 +181,62 @@
 
                         {/* Aktive Timer */}
                         <div className="space-y-4">
-                            {timers.map(timer => (
-                                <div
-                                    key={timer.id}
-                                    className={`bg-white rounded-lg shadow-md p-6 transition-all ${
-                                        timer.isCompleted ? 'opacity-75 bg-green-50' : ''
-                                    }`}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex-1">
-                                            <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                                                {timer.name}
-                                                {timer.isCompleted && (
-                                                    <CheckCircle className="inline ml-2 text-green-600" size={20} />
-                                                )}
-                                            </h3>
-                                            <p className="text-sm text-gray-500">
-                                                Gestartet: {timer.startTime.toLocaleString('de-DE')}
-                                            </p>
-                                        </div>
-                                        
-                                        <div className="text-center mx-6">
-                                            <div className="text-3xl font-mono font-bold text-gray-800">
-                                                {formatTime(timer.elapsedTime)}
-                                            </div>
-                                            <div className="text-sm text-gray-500">Läuft...</div>
-                                        </div>
+                            {timers.map(timer => {
+                                // Dynamische Berechnung der verstrichenen Zeit
+                                const currentElapsedTime = timer.isCompleted
+                                    ? timer.completedElapsedTime
+                                    : Math.floor((currentTime.getTime() - timer.startTime.getTime()) / 1000);
 
-                                        <div className="flex gap-2">
-                                            {!timer.isCompleted && (
-                                                <button
-                                                    onClick={() => completeTimer(timer.id)}
-                                                    className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
-                                                >
-                                                    <CheckCircle size={20} />
-                                                </button>
-                                            )}
+                                return (
+                                    <div
+                                        key={timer.id}
+                                        className={`bg-white rounded-lg shadow-md p-6 transition-all ${
+                                            timer.isCompleted ? 'opacity-75 bg-green-50' : ''
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex-1">
+                                                <h3 className="text-lg font-semibold text-gray-800 mb-1">
+                                                    {timer.name}
+                                                    {timer.isCompleted && (
+                                                        <CheckCircle className="inline ml-2 text-green-600" size={20} />
+                                                    )}
+                                                </h3>
+                                                <p className="text-sm text-gray-500">
+                                                    Gestartet: {timer.startTime.toLocaleString('de-DE')}
+                                                </p>
+                                            </div>
                                             
-                                            <button
-                                                onClick={() => deleteTimer(timer.id)}
-                                                className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-                                            >
-                                                <Trash2 size={20} />
-                                            </button>
+                                            <div className="text-center mx-6">
+                                                <div className="text-3xl font-mono font-bold text-gray-800">
+                                                    {formatTime(currentElapsedTime)}
+                                                </div>
+                                                <div className="text-sm text-gray-500">
+                                                    {timer.isCompleted ? 'Abgeschlossen' : 'Läuft...'}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex gap-2">
+                                                {!timer.isCompleted && (
+                                                    <button
+                                                        onClick={() => completeTimer(timer.id)}
+                                                        className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
+                                                    >
+                                                        <CheckCircle size={20} />
+                                                    </button>
+                                                )}
+                                                
+                                                <button
+                                                    onClick={() => deleteTimer(timer.id)}
+                                                    className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                                                >
+                                                    <Trash2 size={20} />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
 
                         {timers.length === 0 && (
@@ -239,7 +257,7 @@
 
         ReactDOM.render(<LaundryTimerApp />, document.getElementById('root'));
 
-        // Service Worker registrieren
+        // Service Worker registrieren (unverändert)
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('data:text/javascript,const CACHE_NAME="laundry-timer-v1";const urlsToCache=["/"];self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(urlsToCache)))});self.addEventListener("fetch",event=>{event.respondWith(caches.match(event.request).then(response=>{if(response){return response}return fetch(event.request)}))});')
                 .then(registration => console.log('SW registered'))
