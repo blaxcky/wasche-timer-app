@@ -20,15 +20,13 @@
             -webkit-tap-highlight-color: transparent;
         }
         
-        /* Verbesserte Touch-Targets */
         .touch-target {
             min-height: 48px;
             min-width: 48px;
         }
         
-        /* Bessere Eingabefelder für Mobile */
         input[type="datetime-local"] {
-            font-size: 16px; /* Verhindert Zoom auf iOS */
+            font-size: 16px; 
         }
     </style>
 </head>
@@ -77,15 +75,15 @@
         );
 
         const LaundryTimerApp = () => {
-            // Funktion zum Laden der Timer aus localStorage
             const getInitialTimers = () => {
                 try {
                     const storedTimers = localStorage.getItem('laundryTimers');
                     if (storedTimers) {
-                        // Wichtig: startTime muss wieder in ein Date-Objekt umgewandelt werden
                         return JSON.parse(storedTimers).map(timer => ({
                             ...timer,
-                            startTime: new Date(timer.startTime)
+                            startTime: new Date(timer.startTime),
+                            // NEU: completionTime auch als Date-Objekt laden
+                            completionTime: timer.completionTime ? new Date(timer.completionTime) : null
                         }));
                     }
                 } catch (e) {
@@ -98,24 +96,19 @@
             const [newLoadName, setNewLoadName] = useState('');
             const [editingTimer, setEditingTimer] = useState(null);
             const [editDateTime, setEditDateTime] = useState('');
-            
-            // currentTime wird jede Sekunde aktualisiert, um die Timer-Anzeige zu aktualisieren
             const [currentTime, setCurrentTime] = useState(new Date());
 
-            // Effekt zum Speichern der Timer in localStorage, wann immer sich die "timers"-Liste ändert
             useEffect(() => {
                 localStorage.setItem('laundryTimers', JSON.stringify(timers));
             }, [timers]);
 
-            // Effekt zum Aktualisieren der currentTime jede Sekunde
             useEffect(() => {
                 const interval = setInterval(() => {
                     setCurrentTime(new Date());
                 }, 1000);
                 return () => clearInterval(interval);
-            }, []); // Leeres Array bedeutet, dass dieser Effekt nur einmal beim Mounten ausgeführt wird
+            }, []);
 
-            // Neue Wäscheladung hinzufügen und direkt starten
             const addNewLoad = () => {
                 if (newLoadName.trim()) {
                     const newTimer = {
@@ -123,18 +116,17 @@
                         name: newLoadName,
                         startTime: new Date(),
                         completedElapsedTime: null,
-                        isCompleted: false
+                        isCompleted: false,
+                        completionTime: null // NEU: Initialisieren
                     };
                     setTimers([...timers, newTimer]);
                     setNewLoadName('');
                 }
             };
 
-            // Startzeit bearbeiten
             const startEditTimer = (id) => {
                 const timer = timers.find(t => t.id === id);
                 if (timer) {
-                    // Konvertiere das Datum in das für datetime-local benötigte Format
                     const localDateTime = new Date(timer.startTime.getTime() - timer.startTime.getTimezoneOffset() * 60000)
                         .toISOString().slice(0, 16);
                     setEditingTimer(id);
@@ -142,7 +134,6 @@
                 }
             };
 
-            // Startzeit speichern
             const saveEditTimer = () => {
                 if (editingTimer && editDateTime) {
                     const newStartTime = new Date(editDateTime);
@@ -162,16 +153,14 @@
                 }
             };
 
-            // Bearbeitung abbrechen
             const cancelEditTimer = () => {
                 setEditingTimer(null);
                 setEditDateTime('');
             };
 
-            // Timer als fertig markieren
             const completeTimer = (id) => {
-                const timer = timers.find(t => t.id === id);
-                const confirmMessage = `Möchten Sie "${timer.name}" als fertig markieren?\n\nDer Timer wird gestoppt und als abgeschlossen markiert.`;
+                const timerToComplete = timers.find(t => t.id === id); // Renamed for clarity
+                const confirmMessage = `Möchten Sie "${timerToComplete.name}" als fertig markieren?\n\nDer Timer wird gestoppt und als abgeschlossen markiert.`;
                 
                 if (window.confirm(confirmMessage)) {
                     setTimers(prevTimers =>
@@ -181,7 +170,8 @@
                                 return {
                                     ...timer,
                                     isCompleted: true,
-                                    completedElapsedTime: finalElapsedTime
+                                    completedElapsedTime: finalElapsedTime,
+                                    completionTime: new Date() // NEU: Fertigstellungszeitpunkt speichern
                                 };
                             }
                             return timer;
@@ -190,17 +180,15 @@
                 }
             };
 
-            // Timer löschen
             const deleteTimer = (id) => {
-                const timer = timers.find(t => t.id === id);
-                const confirmMessage = `Möchten Sie "${timer.name}" wirklich löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.`;
+                const timerToDelete = timers.find(t => t.id === id); // Renamed for clarity
+                const confirmMessage = `Möchten Sie "${timerToDelete.name}" wirklich löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.`;
                 
                 if (window.confirm(confirmMessage)) {
                     setTimers(prevTimers => prevTimers.filter(timer => timer.id !== id));
                 }
             };
 
-            // Zeit formatieren mit Tagen, Stunden, Minuten und Sekunden
             const formatTime = (seconds) => {
                 const days = Math.floor(seconds / 86400);
                 const hours = Math.floor((seconds % 86400) / 3600);
@@ -214,6 +202,28 @@
                 }
                 return `${minutes}m ${secs}s`;
             };
+
+            // NEU: Sortierte Timer-Liste
+            const sortedTimers = timers
+                .slice() // Kopie erstellen, um den Originalzustand nicht zu mutieren
+                .sort((a, b) => {
+                    // 1. Nach Fertigstellungsstatus sortieren (aktive zuerst)
+                    if (a.isCompleted !== b.isCompleted) {
+                        return a.isCompleted ? 1 : -1; // false (aktiv) kommt vor true (fertig)
+                    }
+
+                    // 2. Wenn beide fertig sind, nach Fertigstellungszeit sortieren (älteste Fertigstellung zuerst)
+                    if (a.isCompleted) { // und b.isCompleted ist implizit auch true
+                        // Sicherstellen, dass completionTime für robuste Vergleiche existiert (sollte es aber)
+                        const timeA = a.completionTime ? a.completionTime.getTime() : 0;
+                        const timeB = b.completionTime ? b.completionTime.getTime() : 0;
+                        return timeA - timeB; // Aufsteigend nach Zeitstempel -> älteste zuerst
+                    }
+
+                    // 3. Wenn beide aktiv sind, nach Startzeit sortieren (älteste zuerst)
+                    // Dies behält die ursprüngliche Reihenfolge oder sortiert nach Start
+                    return a.startTime.getTime() - b.startTime.getTime();
+                });
 
             return (
                 <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-3 sm:p-4">
@@ -249,14 +259,14 @@
                             </div>
                         </div>
 
-                        {/* Aktive Timer */}
+                        {/* Timer-Liste (jetzt sortiert) */}
                         <div className="space-y-4">
-                            {timers.map(timer => {
+                            {/* NEU: Hier sortedTimers verwenden */}
+                            {sortedTimers.map(timer => {
                                 const currentElapsedTime = timer.isCompleted
                                     ? timer.completedElapsedTime
                                     : Math.floor((currentTime.getTime() - timer.startTime.getTime()) / 1000);
 
-                                // 3 Tage = 259200 Sekunden
                                 const targetSeconds = 3 * 24 * 60 * 60;
                                 const progressPercentage = Math.min((currentElapsedTime / targetSeconds) * 100, 100);
                                 const isTargetReached = currentElapsedTime >= targetSeconds;
@@ -268,24 +278,21 @@
                                             timer.isCompleted ? 'opacity-75' : ''
                                         }`}
                                     >
-                                        {/* Fortschrittsbalken Hintergrund */}
                                         <div 
                                             className={`absolute inset-0 transition-all duration-1000 ${
-                                                isTargetReached 
+                                                isTargetReached && !timer.isCompleted // Nur für aktive Timer, die das Ziel erreicht haben
                                                     ? 'bg-gradient-to-r from-green-100 to-green-200' 
-                                                    : 'bg-gradient-to-r from-blue-50 to-blue-100'
+                                                    : (timer.isCompleted ? 'bg-gray-100' : 'bg-gradient-to-r from-blue-50 to-blue-100') // Unterschiedliche Hintergründe
                                             }`}
                                             style={{ 
-                                                width: `${progressPercentage}%`,
-                                                opacity: 0.6
+                                                width: timer.isCompleted ? `100%` : `${progressPercentage}%`, // Volle Breite für fertige, sonst Progress
+                                                opacity: timer.isCompleted ? 0.4 : 0.6 // Etwas transparenter für fertige
                                             }}
                                         />
                                         
-                                        {/* Inhalt */}
                                         <div className="relative z-10 p-4 sm:p-6">
                                             {/* Mobile Layout: Stacked */}
                                             <div className="block sm:hidden">
-                                                {/* Header mit Namen und Status */}
                                                 <div className="flex items-center justify-between mb-3">
                                                     <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2 flex-1 min-w-0">
                                                         <span className="truncate">{timer.name}</span>
@@ -298,19 +305,20 @@
                                                     )}
                                                 </div>
                                                 
-                                                {/* Timer Display - Zentral und groß */}
                                                 <div className="text-center mb-4">
                                                     <div className={`text-3xl sm:text-4xl font-mono font-bold mb-1 ${
-                                                        isTargetReached ? 'text-green-700' : 'text-gray-800'
+                                                        isTargetReached && !timer.isCompleted ? 'text-green-700' : (timer.isCompleted ? 'text-gray-700' : 'text-gray-800')
                                                     }`}>
                                                         {formatTime(currentElapsedTime)}
                                                     </div>
                                                     <div className="text-sm text-gray-500">
-                                                        {timer.isCompleted ? 'Abgeschlossen' : 'Läuft...'}
+                                                        {timer.isCompleted 
+                                                            ? `Fertig seit: ${timer.completionTime.toLocaleDateString('de-DE')} ${timer.completionTime.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})}`
+                                                            : 'Läuft...'
+                                                        }
                                                     </div>
                                                 </div>
 
-                                                {/* Startzeit */}
                                                 <div className="mb-4">
                                                     {editingTimer === timer.id ? (
                                                         <div className="space-y-3">
@@ -353,41 +361,43 @@
                                                                     })}
                                                                 </div>
                                                             </div>
-                                                            <button
-                                                                onClick={() => startEditTimer(timer.id)}
-                                                                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-target"
-                                                                title="Startzeit bearbeiten"
-                                                            >
-                                                                <Edit size={18} />
-                                                            </button>
+                                                            {!timer.isCompleted && ( // Bearbeiten nur für aktive Timer
+                                                                <button
+                                                                    onClick={() => startEditTimer(timer.id)}
+                                                                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-target"
+                                                                    title="Startzeit bearbeiten"
+                                                                >
+                                                                    <Edit size={18} />
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
-
-                                                {/* Fortschrittsanzeige */}
-                                                <div className="mb-4">
-                                                    <div className="flex items-center gap-3 mb-2">
-                                                        <div className="flex-1 bg-gray-200 rounded-full h-3">
-                                                            <div 
-                                                                className={`h-3 rounded-full transition-all duration-1000 ${
-                                                                    isTargetReached ? 'bg-green-500' : 'bg-blue-500'
-                                                                }`}
-                                                                style={{ width: `${progressPercentage}%` }}
-                                                            />
+                                                
+                                                {!timer.isCompleted && ( // Fortschrittsanzeige nur für aktive Timer
+                                                    <div className="mb-4">
+                                                        <div className="flex items-center gap-3 mb-2">
+                                                            <div className="flex-1 bg-gray-200 rounded-full h-3">
+                                                                <div 
+                                                                    className={`h-3 rounded-full transition-all duration-1000 ${
+                                                                        isTargetReached ? 'bg-green-500' : 'bg-blue-500'
+                                                                    }`}
+                                                                    style={{ width: `${progressPercentage}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className="text-sm font-medium min-w-fit">
+                                                                {Math.round(progressPercentage)}%
+                                                            </span>
                                                         </div>
-                                                        <span className="text-sm font-medium min-w-fit">
-                                                            {Math.round(progressPercentage)}%
-                                                        </span>
+                                                        <div className="text-center text-sm text-gray-600">
+                                                            {isTargetReached 
+                                                                ? '🎉 Ziel erreicht!' 
+                                                                : `Noch ${formatTime(targetSeconds - currentElapsedTime)} bis zum 3-Tage-Ziel`
+                                                            }
+                                                        </div>
                                                     </div>
-                                                    <div className="text-center text-sm text-gray-600">
-                                                        {isTargetReached 
-                                                            ? '🎉 Ziel erreicht!' 
-                                                            : `Noch ${formatTime(targetSeconds - currentElapsedTime)} bis zum 3-Tage-Ziel`
-                                                        }
-                                                    </div>
-                                                </div>
+                                                )}
 
-                                                {/* Action Buttons */}
                                                 <div className="flex gap-3">
                                                     {!timer.isCompleted && (
                                                         <button
@@ -424,7 +434,7 @@
                                                         )}
                                                     </h3>
                                                     <p className="text-sm text-gray-500 mb-2">
-                                                        {editingTimer === timer.id ? (
+                                                        {editingTimer === timer.id && !timer.isCompleted ? ( // Bearbeiten nur für aktive Timer
                                                             <div className="flex gap-2 items-center">
                                                                 <input
                                                                     type="datetime-local"
@@ -450,48 +460,54 @@
                                                         ) : (
                                                             <span>
                                                                 Gestartet: {timer.startTime.toLocaleString('de-DE')}
-                                                                <button
-                                                                    onClick={() => startEditTimer(timer.id)}
-                                                                    className="ml-2 p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors touch-target"
-                                                                    title="Startzeit bearbeiten"
-                                                                >
-                                                                    <Edit size={16} />
-                                                                </button>
+                                                                {!timer.isCompleted && ( // Bearbeiten-Button nur für aktive Timer
+                                                                    <button
+                                                                        onClick={() => startEditTimer(timer.id)}
+                                                                        className="ml-2 p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors touch-target"
+                                                                        title="Startzeit bearbeiten"
+                                                                    >
+                                                                        <Edit size={16} />
+                                                                    </button>
+                                                                )}
                                                             </span>
                                                         )}
                                                     </p>
-                                                    {/* Fortschrittsanzeige */}
-                                                    <div className="text-sm text-gray-600">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="flex-1 bg-gray-200 rounded-full h-2">
-                                                                <div 
-                                                                    className={`h-2 rounded-full transition-all duration-1000 ${
-                                                                        isTargetReached ? 'bg-green-500' : 'bg-blue-500'
-                                                                    }`}
-                                                                    style={{ width: `${progressPercentage}%` }}
-                                                                />
+                                                    {!timer.isCompleted && ( // Fortschrittsanzeige nur für aktive Timer
+                                                        <div className="text-sm text-gray-600">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                                                    <div 
+                                                                        className={`h-2 rounded-full transition-all duration-1000 ${
+                                                                            isTargetReached ? 'bg-green-500' : 'bg-blue-500'
+                                                                        }`}
+                                                                        style={{ width: `${progressPercentage}%` }}
+                                                                    />
+                                                                </div>
+                                                                <span className="text-xs font-medium min-w-fit">
+                                                                    {Math.round(progressPercentage)}%
+                                                                </span>
                                                             </div>
-                                                            <span className="text-xs font-medium min-w-fit">
-                                                                {Math.round(progressPercentage)}%
-                                                            </span>
+                                                            <div className="mt-1 text-xs">
+                                                                {isTargetReached 
+                                                                    ? '🎉 Ziel erreicht!' 
+                                                                    : `Noch ${formatTime(targetSeconds - currentElapsedTime)} bis zum 3-Tage-Ziel`
+                                                                }
+                                                            </div>
                                                         </div>
-                                                        <div className="mt-1 text-xs">
-                                                            {isTargetReached 
-                                                                ? '🎉 Ziel erreicht!' 
-                                                                : `Noch ${formatTime(targetSeconds - currentElapsedTime)} bis zum 3-Tage-Ziel`
-                                                            }
-                                                        </div>
-                                                    </div>
+                                                    )}
                                                 </div>
                                                 
                                                 <div className="text-center">
                                                     <div className={`text-2xl md:text-3xl font-mono font-bold ${
-                                                        isTargetReached ? 'text-green-700' : 'text-gray-800'
+                                                        isTargetReached && !timer.isCompleted ? 'text-green-700' : (timer.isCompleted ? 'text-gray-700' : 'text-gray-800')
                                                     }`}>
                                                         {formatTime(currentElapsedTime)}
                                                     </div>
                                                     <div className="text-sm text-gray-500">
-                                                        {timer.isCompleted ? 'Abgeschlossen' : 'Läuft...'}
+                                                        {timer.isCompleted 
+                                                            ? `Fertig seit: ${timer.completionTime.toLocaleDateString('de-DE')} ${timer.completionTime.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})}`
+                                                            : 'Läuft...'
+                                                        }
                                                     </div>
                                                 </div>
 
@@ -539,7 +555,6 @@
 
         ReactDOM.render(<LaundryTimerApp />, document.getElementById('root'));
 
-        // Service Worker registrieren
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('data:text/javascript,const CACHE_NAME="laundry-timer-v1";const urlsToCache=["/"];self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(urlsToCache)))});self.addEventListener("fetch",event=>{event.respondWith(caches.match(event.request).then(response=>{if(response){return response}return fetch(event.request)}))});')
                 .then(registration => console.log('SW registered'))
