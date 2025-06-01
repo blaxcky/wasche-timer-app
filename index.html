@@ -160,7 +160,8 @@
                         {/* Neue Wäscheladung hinzufügen */}
                         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
                             <h2 className="text-xl font-semibold mb-4 text-gray-800">Neue Wäscheladung</h2>
-                            <div className="flex gap-3">
+                            {/* GEÄNDERTER BEREICH START */}
+                            <div className="flex flex-col gap-3"> {/* Geändert: flex-col hinzugefügt */}
                                 <input
                                     type="text"
                                     value={newLoadName}
@@ -171,12 +172,13 @@
                                 />
                                 <button
                                     onClick={addNewLoad}
-                                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                                    className="w-full px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2" {/* Geändert: w-full und justify-center hinzugefügt */}
                                 >
                                     <Plus size={20} />
                                     Starten
                                 </button>
                             </div>
+                            {/* GEÄNDERTER BEREICH ENDE */}
                         </div>
 
                         {/* Aktive Timer */}
