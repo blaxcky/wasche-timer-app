@@ -194,53 +194,101 @@
                                     ? timer.completedElapsedTime
                                     : Math.floor((currentTime.getTime() - timer.startTime.getTime()) / 1000);
 
+                                // 3 Tage = 259200 Sekunden
+                                const targetSeconds = 3 * 24 * 60 * 60;
+                                const progressPercentage = Math.min((currentElapsedTime / targetSeconds) * 100, 100);
+                                const isTargetReached = currentElapsedTime >= targetSeconds;
+
                                 return (
                                     <div
                                         key={timer.id}
-                                        className={`bg-white rounded-lg shadow-md p-4 sm:p-6 transition-all ${
-                                            timer.isCompleted ? 'opacity-75 bg-green-50' : ''
+                                        className={`relative overflow-hidden bg-white rounded-lg shadow-md transition-all ${
+                                            timer.isCompleted ? 'opacity-75' : ''
                                         }`}
                                     >
-                                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                            <div className="flex-1 min-w-0">
-                                                <h3 className="text-lg font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                                                    <span className="truncate">{timer.name}</span>
-                                                    {timer.isCompleted && (
-                                                        <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
-                                                    )}
-                                                </h3>
-                                                <p className="text-sm text-gray-500">
-                                                    Gestartet: {timer.startTime.toLocaleString('de-DE')}
-                                                </p>
-                                            </div>
-                                            
-                                            <div className="text-center sm:mx-6 w-full sm:w-auto">
-                                                <div className="text-2xl sm:text-3xl font-mono font-bold text-gray-800">
-                                                    {formatTime(currentElapsedTime)}
+                                        {/* Fortschrittsbalken Hintergrund */}
+                                        <div 
+                                            className={`absolute inset-0 transition-all duration-1000 ${
+                                                isTargetReached 
+                                                    ? 'bg-gradient-to-r from-green-100 to-green-200' 
+                                                    : 'bg-gradient-to-r from-blue-50 to-blue-100'
+                                            }`}
+                                            style={{ 
+                                                width: `${progressPercentage}%`,
+                                                opacity: 0.6
+                                            }}
+                                        />
+                                        
+                                        {/* Inhalt */}
+                                        <div className="relative z-10 p-4 sm:p-6">
+                                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="text-lg font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                                                        <span className="truncate">{timer.name}</span>
+                                                        {timer.isCompleted && (
+                                                            <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
+                                                        )}
+                                                        {isTargetReached && !timer.isCompleted && (
+                                                            <span className="text-green-600 font-bold text-sm flex-shrink-0">✓ 3 TAGE</span>
+                                                        )}
+                                                    </h3>
+                                                    <p className="text-sm text-gray-500 mb-2">
+                                                        Gestartet: {timer.startTime.toLocaleString('de-DE')}
+                                                    </p>
+                                                    {/* Fortschrittsanzeige */}
+                                                    <div className="text-sm text-gray-600">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                                                <div 
+                                                                    className={`h-2 rounded-full transition-all duration-1000 ${
+                                                                        isTargetReached ? 'bg-green-500' : 'bg-blue-500'
+                                                                    }`}
+                                                                    style={{ width: `${progressPercentage}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className="text-xs font-medium min-w-fit">
+                                                                {Math.round(progressPercentage)}%
+                                                            </span>
+                                                        </div>
+                                                        <div className="mt-1 text-xs">
+                                                            {isTargetReached 
+                                                                ? '🎉 Ziel erreicht!' 
+                                                                : `Noch ${formatTime(targetSeconds - currentElapsedTime)} bis zum 3-Tage-Ziel`
+                                                            }
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="text-sm text-gray-500">
-                                                    {timer.isCompleted ? 'Abgeschlossen' : 'Läuft...'}
-                                                </div>
-                                            </div>
-
-                                            <div className="flex gap-2 w-full sm:w-auto justify-end">
-                                                {!timer.isCompleted && (
-                                                    <button
-                                                        onClick={() => completeTimer(timer.id)}
-                                                        className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
-                                                        title="Als fertig markieren"
-                                                    >
-                                                        <CheckCircle size={20} />
-                                                    </button>
-                                                )}
                                                 
-                                                <button
-                                                    onClick={() => deleteTimer(timer.id)}
-                                                    className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-                                                    title="Timer löschen"
-                                                >
-                                                    <Trash2 size={20} />
-                                                </button>
+                                                <div className="text-center sm:mx-6 w-full sm:w-auto">
+                                                    <div className={`text-2xl sm:text-3xl font-mono font-bold ${
+                                                        isTargetReached ? 'text-green-700' : 'text-gray-800'
+                                                    }`}>
+                                                        {formatTime(currentElapsedTime)}
+                                                    </div>
+                                                    <div className="text-sm text-gray-500">
+                                                        {timer.isCompleted ? 'Abgeschlossen' : 'Läuft...'}
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex gap-2 w-full sm:w-auto justify-end">
+                                                    {!timer.isCompleted && (
+                                                        <button
+                                                            onClick={() => completeTimer(timer.id)}
+                                                            className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
+                                                            title="Als fertig markieren"
+                                                        >
+                                                            <CheckCircle size={20} />
+                                                        </button>
+                                                    )}
+                                                    
+                                                    <button
+                                                        onClick={() => deleteTimer(timer.id)}
+                                                        className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                                                        title="Timer löschen"
+                                                    >
+                                                        <Trash2 size={20} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
