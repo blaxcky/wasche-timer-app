@@ -14,7 +14,22 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; }
+        body { 
+            margin: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Verbesserte Touch-Targets */
+        .touch-target {
+            min-height: 48px;
+            min-width: 48px;
+        }
+        
+        /* Bessere Eingabefelder für Mobile */
+        input[type="datetime-local"] {
+            font-size: 16px; /* Verhindert Zoom auf iOS */
+        }
     </style>
 </head>
 <body>
@@ -62,20 +77,9 @@
         );
 
         const LaundryTimerApp = () => {
-            // Funktion zum Laden der Timer aus localStorage
+            // Funktion zum Laden der Timer
             const getInitialTimers = () => {
-                try {
-                    const storedTimers = localStorage.getItem('laundryTimers');
-                    if (storedTimers) {
-                        // Wichtig: startTime muss wieder in ein Date-Objekt umgewandelt werden
-                        return JSON.parse(storedTimers).map(timer => ({
-                            ...timer,
-                            startTime: new Date(timer.startTime)
-                        }));
-                    }
-                } catch (e) {
-                    console.error("Fehler beim Laden der Timer aus localStorage:", e);
-                }
+                // In-memory storage für diese Demo
                 return [];
             };
 
@@ -87,18 +91,13 @@
             // currentTime wird jede Sekunde aktualisiert, um die Timer-Anzeige zu aktualisieren
             const [currentTime, setCurrentTime] = useState(new Date());
 
-            // Effekt zum Speichern der Timer in localStorage, wann immer sich die "timers"-Liste ändert
-            useEffect(() => {
-                localStorage.setItem('laundryTimers', JSON.stringify(timers));
-            }, [timers]);
-
             // Effekt zum Aktualisieren der currentTime jede Sekunde
             useEffect(() => {
                 const interval = setInterval(() => {
                     setCurrentTime(new Date());
                 }, 1000);
                 return () => clearInterval(interval);
-            }, []); // Leeres Array bedeutet, dass dieser Effekt nur einmal beim Mounten ausgeführt wird
+            }, []);
 
             // Neue Wäscheladung hinzufügen und direkt starten
             const addNewLoad = () => {
@@ -201,32 +200,32 @@
             };
 
             return (
-                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-3 sm:p-4">
                     <div className="max-w-4xl mx-auto">
                         {/* Header */}
-                        <div className="text-center mb-8">
-                            <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-2 flex items-center justify-center gap-3">
-                                <Clock size={40} className="text-blue-600" />
+                        <div className="text-center mb-6 sm:mb-8">
+                            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2 flex items-center justify-center gap-2 sm:gap-3">
+                                <Clock size={32} className="text-blue-600 sm:w-10 sm:h-10" />
                                 Wäsche-Timer
                             </h1>
-                            <p className="text-gray-600 text-sm sm:text-base">Verfolgen Sie die Trockenzeit Ihrer Wäsche am Wäscheständer</p>
+                            <p className="text-gray-600 text-sm sm:text-base px-4">Verfolgen Sie die Trockenzeit Ihrer Wäsche am Wäscheständer</p>
                         </div>
 
                         {/* Neue Wäscheladung hinzufügen */}
-                        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+                        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6">
                             <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800">Neue Wäscheladung</h2>
-                            <div className="flex flex-col sm:flex-row gap-3">
+                            <div className="flex flex-col gap-3 sm:flex-row">
                                 <input
                                     type="text"
                                     value={newLoadName}
                                     onChange={(e) => setNewLoadName(e.target.value)}
                                     onKeyPress={(e) => e.key === 'Enter' && addNewLoad()}
                                     placeholder="z.B. Buntwäsche, Handtücher, Bettwäsche..."
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="flex-1 px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 />
                                 <button
                                     onClick={addNewLoad}
-                                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
+                                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors flex items-center justify-center gap-2 font-medium touch-target"
                                 >
                                     <Plus size={20} />
                                     Starten
@@ -249,7 +248,7 @@
                                 return (
                                     <div
                                         key={timer.id}
-                                        className={`relative overflow-hidden bg-white rounded-lg shadow-md transition-all ${
+                                        className={`relative overflow-hidden bg-white rounded-xl shadow-lg transition-all ${
                                             timer.isCompleted ? 'opacity-75' : ''
                                         }`}
                                     >
@@ -268,7 +267,136 @@
                                         
                                         {/* Inhalt */}
                                         <div className="relative z-10 p-4 sm:p-6">
-                                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                            {/* Mobile Layout: Stacked */}
+                                            <div className="block sm:hidden">
+                                                {/* Header mit Namen und Status */}
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2 flex-1 min-w-0">
+                                                        <span className="truncate">{timer.name}</span>
+                                                        {timer.isCompleted && (
+                                                            <CheckCircle className="text-green-600 flex-shrink-0" size={18} />
+                                                        )}
+                                                    </h3>
+                                                    {isTargetReached && !timer.isCompleted && (
+                                                        <span className="text-green-600 font-bold text-sm whitespace-nowrap">✓ 3 TAGE</span>
+                                                    )}
+                                                </div>
+                                                
+                                                {/* Timer Display - Zentral und groß */}
+                                                <div className="text-center mb-4">
+                                                    <div className={`text-3xl sm:text-4xl font-mono font-bold mb-1 ${
+                                                        isTargetReached ? 'text-green-700' : 'text-gray-800'
+                                                    }`}>
+                                                        {formatTime(currentElapsedTime)}
+                                                    </div>
+                                                    <div className="text-sm text-gray-500">
+                                                        {timer.isCompleted ? 'Abgeschlossen' : 'Läuft...'}
+                                                    </div>
+                                                </div>
+
+                                                {/* Startzeit */}
+                                                <div className="mb-4">
+                                                    {editingTimer === timer.id ? (
+                                                        <div className="space-y-3">
+                                                            <input
+                                                                type="datetime-local"
+                                                                value={editDateTime}
+                                                                onChange={(e) => setEditDateTime(e.target.value)}
+                                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                            />
+                                                            <div className="flex gap-2">
+                                                                <button
+                                                                    onClick={saveEditTimer}
+                                                                    className="flex-1 py-2 bg-green-100 text-green-700 rounded-lg font-medium hover:bg-green-200 transition-colors touch-target"
+                                                                >
+                                                                    Speichern
+                                                                </button>
+                                                                <button
+                                                                    onClick={cancelEditTimer}
+                                                                    className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors touch-target"
+                                                                >
+                                                                    Abbrechen
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="text-sm text-gray-500 flex-1">
+                                                                <div>Gestartet:</div>
+                                                                <div className="font-medium text-gray-700">
+                                                                    {timer.startTime.toLocaleDateString('de-DE', { 
+                                                                        day: '2-digit', 
+                                                                        month: '2-digit', 
+                                                                        year: 'numeric' 
+                                                                    })}
+                                                                </div>
+                                                                <div className="font-medium text-gray-700">
+                                                                    {timer.startTime.toLocaleTimeString('de-DE', { 
+                                                                        hour: '2-digit', 
+                                                                        minute: '2-digit' 
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => startEditTimer(timer.id)}
+                                                                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-target"
+                                                                title="Startzeit bearbeiten"
+                                                            >
+                                                                <Edit size={18} />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Fortschrittsanzeige */}
+                                                <div className="mb-4">
+                                                    <div className="flex items-center gap-3 mb-2">
+                                                        <div className="flex-1 bg-gray-200 rounded-full h-3">
+                                                            <div 
+                                                                className={`h-3 rounded-full transition-all duration-1000 ${
+                                                                    isTargetReached ? 'bg-green-500' : 'bg-blue-500'
+                                                                }`}
+                                                                style={{ width: `${progressPercentage}%` }}
+                                                            />
+                                                        </div>
+                                                        <span className="text-sm font-medium min-w-fit">
+                                                            {Math.round(progressPercentage)}%
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-center text-sm text-gray-600">
+                                                        {isTargetReached 
+                                                            ? '🎉 Ziel erreicht!' 
+                                                            : `Noch ${formatTime(targetSeconds - currentElapsedTime)} bis zum 3-Tage-Ziel`
+                                                        }
+                                                    </div>
+                                                </div>
+
+                                                {/* Action Buttons */}
+                                                <div className="flex gap-3">
+                                                    {!timer.isCompleted && (
+                                                        <button
+                                                            onClick={() => completeTimer(timer.id)}
+                                                            className="flex-1 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 active:bg-blue-300 transition-colors flex items-center justify-center gap-2 font-medium touch-target"
+                                                        >
+                                                            <CheckCircle size={20} />
+                                                            Fertig
+                                                        </button>
+                                                    )}
+                                                    
+                                                    <button
+                                                        onClick={() => deleteTimer(timer.id)}
+                                                        className={`py-3 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 active:bg-red-300 transition-colors flex items-center justify-center gap-2 font-medium touch-target ${
+                                                            timer.isCompleted ? 'flex-1' : 'px-4'
+                                                        }`}
+                                                    >
+                                                        <Trash2 size={20} />
+                                                        {timer.isCompleted ? 'Löschen' : ''}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Desktop Layout: Horizontal */}
+                                            <div className="hidden sm:flex items-center justify-between gap-6">
                                                 <div className="flex-1 min-w-0">
                                                     <h3 className="text-lg font-semibold text-gray-800 mb-1 flex items-center gap-2">
                                                         <span className="truncate">{timer.name}</span>
@@ -281,23 +409,23 @@
                                                     </h3>
                                                     <p className="text-sm text-gray-500 mb-2">
                                                         {editingTimer === timer.id ? (
-                                                            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                                                            <div className="flex gap-2 items-center">
                                                                 <input
                                                                     type="datetime-local"
                                                                     value={editDateTime}
                                                                     onChange={(e) => setEditDateTime(e.target.value)}
-                                                                    className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                                    className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                                 />
                                                                 <div className="flex gap-1">
                                                                     <button
                                                                         onClick={saveEditTimer}
-                                                                        className="px-2 py-1 bg-green-100 text-green-600 rounded text-xs hover:bg-green-200 transition-colors"
+                                                                        className="px-3 py-1 bg-green-100 text-green-600 rounded text-sm hover:bg-green-200 transition-colors touch-target"
                                                                     >
                                                                         ✓
                                                                     </button>
                                                                     <button
                                                                         onClick={cancelEditTimer}
-                                                                        className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200 transition-colors"
+                                                                        className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200 transition-colors touch-target"
                                                                     >
                                                                         ✕
                                                                     </button>
@@ -308,10 +436,10 @@
                                                                 Gestartet: {timer.startTime.toLocaleString('de-DE')}
                                                                 <button
                                                                     onClick={() => startEditTimer(timer.id)}
-                                                                    className="ml-2 p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                                                                    className="ml-2 p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors touch-target"
                                                                     title="Startzeit bearbeiten"
                                                                 >
-                                                                    <Edit size={14} />
+                                                                    <Edit size={16} />
                                                                 </button>
                                                             </span>
                                                         )}
@@ -340,8 +468,8 @@
                                                     </div>
                                                 </div>
                                                 
-                                                <div className="text-center sm:mx-6 w-full sm:w-auto">
-                                                    <div className={`text-2xl sm:text-3xl font-mono font-bold ${
+                                                <div className="text-center">
+                                                    <div className={`text-2xl md:text-3xl font-mono font-bold ${
                                                         isTargetReached ? 'text-green-700' : 'text-gray-800'
                                                     }`}>
                                                         {formatTime(currentElapsedTime)}
@@ -351,11 +479,11 @@
                                                     </div>
                                                 </div>
 
-                                                <div className="flex gap-2 w-full sm:w-auto justify-end">
+                                                <div className="flex gap-2">
                                                     {!timer.isCompleted && (
                                                         <button
                                                             onClick={() => completeTimer(timer.id)}
-                                                            className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
+                                                            className="p-3 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 active:bg-blue-300 transition-colors touch-target"
                                                             title="Als fertig markieren"
                                                         >
                                                             <CheckCircle size={20} />
@@ -364,7 +492,7 @@
                                                     
                                                     <button
                                                         onClick={() => deleteTimer(timer.id)}
-                                                        className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                                                        className="p-3 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 active:bg-red-300 transition-colors touch-target"
                                                         title="Timer löschen"
                                                     >
                                                         <Trash2 size={20} />
