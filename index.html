@@ -77,9 +77,20 @@
         );
 
         const LaundryTimerApp = () => {
-            // Funktion zum Laden der Timer
+            // Funktion zum Laden der Timer aus localStorage
             const getInitialTimers = () => {
-                // In-memory storage für diese Demo
+                try {
+                    const storedTimers = localStorage.getItem('laundryTimers');
+                    if (storedTimers) {
+                        // Wichtig: startTime muss wieder in ein Date-Objekt umgewandelt werden
+                        return JSON.parse(storedTimers).map(timer => ({
+                            ...timer,
+                            startTime: new Date(timer.startTime)
+                        }));
+                    }
+                } catch (e) {
+                    console.error("Fehler beim Laden der Timer aus localStorage:", e);
+                }
                 return [];
             };
 
@@ -91,13 +102,18 @@
             // currentTime wird jede Sekunde aktualisiert, um die Timer-Anzeige zu aktualisieren
             const [currentTime, setCurrentTime] = useState(new Date());
 
+            // Effekt zum Speichern der Timer in localStorage, wann immer sich die "timers"-Liste ändert
+            useEffect(() => {
+                localStorage.setItem('laundryTimers', JSON.stringify(timers));
+            }, [timers]);
+
             // Effekt zum Aktualisieren der currentTime jede Sekunde
             useEffect(() => {
                 const interval = setInterval(() => {
                     setCurrentTime(new Date());
                 }, 1000);
                 return () => clearInterval(interval);
-            }, []);
+            }, []); // Leeres Array bedeutet, dass dieser Effekt nur einmal beim Mounten ausgeführt wird
 
             // Neue Wäscheladung hinzufügen und direkt starten
             const addNewLoad = () => {
