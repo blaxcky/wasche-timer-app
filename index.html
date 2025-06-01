@@ -108,24 +108,34 @@
 
             // Timer als fertig markieren
             const completeTimer = (id) => {
-                setTimers(prevTimers =>
-                    prevTimers.map(timer => {
-                        if (timer.id === id) {
-                            const finalElapsedTime = Math.floor((currentTime.getTime() - timer.startTime.getTime()) / 1000);
-                            return {
-                                ...timer,
-                                isCompleted: true,
-                                completedElapsedTime: finalElapsedTime
-                            };
-                        }
-                        return timer;
-                    })
-                );
+                const timer = timers.find(t => t.id === id);
+                const confirmMessage = `Möchten Sie "${timer.name}" als fertig markieren?\n\nDer Timer wird gestoppt und als abgeschlossen markiert.`;
+                
+                if (window.confirm(confirmMessage)) {
+                    setTimers(prevTimers =>
+                        prevTimers.map(timer => {
+                            if (timer.id === id) {
+                                const finalElapsedTime = Math.floor((currentTime.getTime() - timer.startTime.getTime()) / 1000);
+                                return {
+                                    ...timer,
+                                    isCompleted: true,
+                                    completedElapsedTime: finalElapsedTime
+                                };
+                            }
+                            return timer;
+                        })
+                    );
+                }
             };
 
             // Timer löschen
             const deleteTimer = (id) => {
-                setTimers(prevTimers => prevTimers.filter(timer => timer.id !== id));
+                const timer = timers.find(t => t.id === id);
+                const confirmMessage = `Möchten Sie "${timer.name}" wirklich löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.`;
+                
+                if (window.confirm(confirmMessage)) {
+                    setTimers(prevTimers => prevTimers.filter(timer => timer.id !== id));
+                }
             };
 
             // Zeit formatieren mit Tagen, Stunden, Minuten und Sekunden
