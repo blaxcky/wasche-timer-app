@@ -14,19 +14,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { 
-            margin: 0; 
+        body {
+            margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
-        
+
         .touch-target {
             min-height: 48px;
             min-width: 48px;
         }
-        
+
         input[type="datetime-local"] {
-            font-size: 16px; 
+            font-size: 16px;
         }
     </style>
 </head>
@@ -82,7 +82,6 @@
                         return JSON.parse(storedTimers).map(timer => ({
                             ...timer,
                             startTime: new Date(timer.startTime),
-                            // NEU: completionTime auch als Date-Objekt laden
                             completionTime: timer.completionTime ? new Date(timer.completionTime) : null
                         }));
                     }
@@ -117,7 +116,7 @@
                         startTime: new Date(),
                         completedElapsedTime: null,
                         isCompleted: false,
-                        completionTime: null // NEU: Initialisieren
+                        completionTime: null
                     };
                     setTimers([...timers, newTimer]);
                     setNewLoadName('');
@@ -159,9 +158,9 @@
             };
 
             const completeTimer = (id) => {
-                const timerToComplete = timers.find(t => t.id === id); // Renamed for clarity
+                const timerToComplete = timers.find(t => t.id === id);
                 const confirmMessage = `Möchten Sie "${timerToComplete.name}" als fertig markieren?\n\nDer Timer wird gestoppt und als abgeschlossen markiert.`;
-                
+
                 if (window.confirm(confirmMessage)) {
                     setTimers(prevTimers =>
                         prevTimers.map(timer => {
@@ -171,7 +170,7 @@
                                     ...timer,
                                     isCompleted: true,
                                     completedElapsedTime: finalElapsedTime,
-                                    completionTime: new Date() // NEU: Fertigstellungszeitpunkt speichern
+                                    completionTime: new Date()
                                 };
                             }
                             return timer;
@@ -181,9 +180,9 @@
             };
 
             const deleteTimer = (id) => {
-                const timerToDelete = timers.find(t => t.id === id); // Renamed for clarity
+                const timerToDelete = timers.find(t => t.id === id);
                 const confirmMessage = `Möchten Sie "${timerToDelete.name}" wirklich löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.`;
-                
+
                 if (window.confirm(confirmMessage)) {
                     setTimers(prevTimers => prevTimers.filter(timer => timer.id !== id));
                 }
@@ -194,7 +193,7 @@
                 const hours = Math.floor((seconds % 86400) / 3600);
                 const minutes = Math.floor((seconds % 3600) / 60);
                 const secs = seconds % 60;
-                
+
                 if (days > 0) {
                     return `${days}d ${hours}h ${minutes}m ${secs}s`;
                 } else if (hours > 0) {
@@ -203,25 +202,17 @@
                 return `${minutes}m ${secs}s`;
             };
 
-            // NEU: Sortierte Timer-Liste
             const sortedTimers = timers
-                .slice() // Kopie erstellen, um den Originalzustand nicht zu mutieren
+                .slice()
                 .sort((a, b) => {
-                    // 1. Nach Fertigstellungsstatus sortieren (aktive zuerst)
                     if (a.isCompleted !== b.isCompleted) {
-                        return a.isCompleted ? 1 : -1; // false (aktiv) kommt vor true (fertig)
+                        return a.isCompleted ? 1 : -1;
                     }
-
-                    // 2. Wenn beide fertig sind, nach Fertigstellungszeit sortieren (älteste Fertigstellung zuerst)
-                    if (a.isCompleted) { // und b.isCompleted ist implizit auch true
-                        // Sicherstellen, dass completionTime für robuste Vergleiche existiert (sollte es aber)
+                    if (a.isCompleted) {
                         const timeA = a.completionTime ? a.completionTime.getTime() : 0;
                         const timeB = b.completionTime ? b.completionTime.getTime() : 0;
-                        return timeA - timeB; // Aufsteigend nach Zeitstempel -> älteste zuerst
+                        return timeA - timeB;
                     }
-
-                    // 3. Wenn beide aktiv sind, nach Startzeit sortieren (älteste zuerst)
-                    // Dies behält die ursprüngliche Reihenfolge oder sortiert nach Start
                     return a.startTime.getTime() - b.startTime.getTime();
                 });
 
@@ -259,9 +250,8 @@
                             </div>
                         </div>
 
-                        {/* Timer-Liste (jetzt sortiert) */}
+                        {/* Timer-Liste */}
                         <div className="space-y-4">
-                            {/* NEU: Hier sortedTimers verwenden */}
                             {sortedTimers.map(timer => {
                                 const currentElapsedTime = timer.isCompleted
                                     ? timer.completedElapsedTime
@@ -278,19 +268,9 @@
                                             timer.isCompleted ? 'opacity-75' : ''
                                         }`}
                                     >
-                                        <div 
-                                            className={`absolute inset-0 transition-all duration-1000 ${
-                                                isTargetReached && !timer.isCompleted // Nur für aktive Timer, die das Ziel erreicht haben
-                                                    ? 'bg-gradient-to-r from-green-100 to-green-200' 
-                                                    : (timer.isCompleted ? 'bg-gray-100' : 'bg-gradient-to-r from-blue-50 to-blue-100') // Unterschiedliche Hintergründe
-                                            }`}
-                                            style={{ 
-                                                width: timer.isCompleted ? `100%` : `${progressPercentage}%`, // Volle Breite für fertige, sonst Progress
-                                                opacity: timer.isCompleted ? 0.4 : 0.6 // Etwas transparenter für fertige
-                                            }}
-                                        />
+                                        {/* ENTFERNT: Der sich füllende Hintergrund-Div wurde hier entfernt */}
                                         
-                                        <div className="relative z-10 p-4 sm:p-6">
+                                        <div className="relative z-10 p-4 sm:p-6"> {/* z-10 ist nicht mehr zwingend notwendig, kann aber bleiben */}
                                             {/* Mobile Layout: Stacked */}
                                             <div className="block sm:hidden">
                                                 <div className="flex items-center justify-between mb-3">
@@ -312,7 +292,7 @@
                                                         {formatTime(currentElapsedTime)}
                                                     </div>
                                                     <div className="text-sm text-gray-500">
-                                                        {timer.isCompleted 
+                                                        {timer.isCompleted
                                                             ? `Fertig seit: ${timer.completionTime.toLocaleDateString('de-DE')} ${timer.completionTime.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})}`
                                                             : 'Läuft...'
                                                         }
@@ -348,20 +328,20 @@
                                                             <div className="text-sm text-gray-500 flex-1">
                                                                 <div>Gestartet:</div>
                                                                 <div className="font-medium text-gray-700">
-                                                                    {timer.startTime.toLocaleDateString('de-DE', { 
-                                                                        day: '2-digit', 
-                                                                        month: '2-digit', 
-                                                                        year: 'numeric' 
+                                                                    {timer.startTime.toLocaleDateString('de-DE', {
+                                                                        day: '2-digit',
+                                                                        month: '2-digit',
+                                                                        year: 'numeric'
                                                                     })}
                                                                 </div>
                                                                 <div className="font-medium text-gray-700">
-                                                                    {timer.startTime.toLocaleTimeString('de-DE', { 
-                                                                        hour: '2-digit', 
-                                                                        minute: '2-digit' 
+                                                                    {timer.startTime.toLocaleTimeString('de-DE', {
+                                                                        hour: '2-digit',
+                                                                        minute: '2-digit'
                                                                     })}
                                                                 </div>
                                                             </div>
-                                                            {!timer.isCompleted && ( // Bearbeiten nur für aktive Timer
+                                                            {!timer.isCompleted && (
                                                                 <button
                                                                     onClick={() => startEditTimer(timer.id)}
                                                                     className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-target"
@@ -374,11 +354,11 @@
                                                     )}
                                                 </div>
                                                 
-                                                {!timer.isCompleted && ( // Fortschrittsanzeige nur für aktive Timer
+                                                {!timer.isCompleted && (
                                                     <div className="mb-4">
                                                         <div className="flex items-center gap-3 mb-2">
                                                             <div className="flex-1 bg-gray-200 rounded-full h-3">
-                                                                <div 
+                                                                <div
                                                                     className={`h-3 rounded-full transition-all duration-1000 ${
                                                                         isTargetReached ? 'bg-green-500' : 'bg-blue-500'
                                                                     }`}
@@ -390,8 +370,8 @@
                                                             </span>
                                                         </div>
                                                         <div className="text-center text-sm text-gray-600">
-                                                            {isTargetReached 
-                                                                ? '🎉 Ziel erreicht!' 
+                                                            {isTargetReached
+                                                                ? '🎉 Ziel erreicht!'
                                                                 : `Noch ${formatTime(targetSeconds - currentElapsedTime)} bis zum 3-Tage-Ziel`
                                                             }
                                                         </div>
@@ -434,7 +414,7 @@
                                                         )}
                                                     </h3>
                                                     <p className="text-sm text-gray-500 mb-2">
-                                                        {editingTimer === timer.id && !timer.isCompleted ? ( // Bearbeiten nur für aktive Timer
+                                                        {editingTimer === timer.id && !timer.isCompleted ? (
                                                             <div className="flex gap-2 items-center">
                                                                 <input
                                                                     type="datetime-local"
@@ -460,7 +440,7 @@
                                                         ) : (
                                                             <span>
                                                                 Gestartet: {timer.startTime.toLocaleString('de-DE')}
-                                                                {!timer.isCompleted && ( // Bearbeiten-Button nur für aktive Timer
+                                                                {!timer.isCompleted && (
                                                                     <button
                                                                         onClick={() => startEditTimer(timer.id)}
                                                                         className="ml-2 p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors touch-target"
@@ -472,11 +452,11 @@
                                                             </span>
                                                         )}
                                                     </p>
-                                                    {!timer.isCompleted && ( // Fortschrittsanzeige nur für aktive Timer
+                                                    {!timer.isCompleted && (
                                                         <div className="text-sm text-gray-600">
                                                             <div className="flex items-center gap-2">
                                                                 <div className="flex-1 bg-gray-200 rounded-full h-2">
-                                                                    <div 
+                                                                    <div
                                                                         className={`h-2 rounded-full transition-all duration-1000 ${
                                                                             isTargetReached ? 'bg-green-500' : 'bg-blue-500'
                                                                         }`}
@@ -488,15 +468,15 @@
                                                                 </span>
                                                             </div>
                                                             <div className="mt-1 text-xs">
-                                                                {isTargetReached 
-                                                                    ? '🎉 Ziel erreicht!' 
+                                                                {isTargetReached
+                                                                    ? '🎉 Ziel erreicht!'
                                                                     : `Noch ${formatTime(targetSeconds - currentElapsedTime)} bis zum 3-Tage-Ziel`
                                                                 }
                                                             </div>
                                                         </div>
                                                     )}
                                                 </div>
-                                                
+
                                                 <div className="text-center">
                                                     <div className={`text-2xl md:text-3xl font-mono font-bold ${
                                                         isTargetReached && !timer.isCompleted ? 'text-green-700' : (timer.isCompleted ? 'text-gray-700' : 'text-gray-800')
@@ -504,7 +484,7 @@
                                                         {formatTime(currentElapsedTime)}
                                                     </div>
                                                     <div className="text-sm text-gray-500">
-                                                        {timer.isCompleted 
+                                                        {timer.isCompleted
                                                             ? `Fertig seit: ${timer.completionTime.toLocaleDateString('de-DE')} ${timer.completionTime.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})}`
                                                             : 'Läuft...'
                                                         }
@@ -521,7 +501,7 @@
                                                             <CheckCircle size={20} />
                                                         </button>
                                                     )}
-                                                    
+
                                                     <button
                                                         onClick={() => deleteTimer(timer.id)}
                                                         className="p-3 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 active:bg-red-300 transition-colors touch-target"
