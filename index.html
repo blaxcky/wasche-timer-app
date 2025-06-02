@@ -37,7 +37,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React; // useRef hinzugefügt, falls benötigt, hier aber nicht direkt.
+        const { useState, useEffect } = React;
 
         // Lucide React Icons (simplified)
         const Clock = ({ size = 24, className = "" }) => (
@@ -77,20 +77,19 @@
             </svg>
         );
 
-        // NEUE KOMPONENTE für dynamische Schriftgröße des Timer-Namens
         const TimerNameDisplay = ({ name, baseFontClass, smallerFontClass, charThreshold }) => {
-            const [useSmallerFont, setUseSmallerFont] = useState(false);
+            const [currentFontClass, setCurrentFontClass] = useState(baseFontClass);
 
             useEffect(() => {
                 if (name.length > charThreshold) {
-                    setUseSmallerFont(true);
+                    setCurrentFontClass(smallerFontClass);
                 } else {
-                    setUseSmallerFont(false);
+                    setCurrentFontClass(baseFontClass);
                 }
-            }, [name, charThreshold]);
+            }, [name, charThreshold, baseFontClass, smallerFontClass]);
 
             return (
-                <span className={`truncate ${useSmallerFont ? smallerFontClass : baseFontClass}`}>
+                <span className={`truncate ${currentFontClass}`}>
                     {name}
                 </span>
             );
@@ -224,7 +223,7 @@
 
                 let parts = [];
 
-                if (showSeconds) { // Standardanzeige mit Sekunden
+                if (showSeconds) { 
                     if (days > 0) {
                         parts.push(`${days}d`);
                         parts.push(`${hours}h`);
@@ -237,10 +236,10 @@
                     } else if (minutes > 0) {
                         parts.push(`${minutes}m`);
                         parts.push(`${secs}s`);
-                    } else { // Nur Sekunden
+                    } else { 
                         parts.push(`${secs}s`);
                     }
-                } else { // Spezielle Anzeige für "Noch bis Ziel"
+                } else { 
                     if (days > 0) {
                         parts.push(`${days}d`);
                         parts.push(`${hours}h`);
@@ -334,13 +333,12 @@
                                             <div className="block sm:hidden">
                                                 <div className="flex items-center justify-between mb-2">
                                                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                                                        {/* Schriftgröße für Name wird hier von TimerNameDisplay gehandhabt */}
                                                         <h3 className="font-semibold text-gray-800 flex items-center gap-1">
                                                             <TimerNameDisplay
                                                                 name={timer.name}
-                                                                baseFontClass="text-xl"      // Basis-Schriftgröße
-                                                                smallerFontClass="text-lg"  // Kleinere Schriftgröße
-                                                                charThreshold={15}          // Zeichenlimit für mobile Ansicht
+                                                                baseFontClass="text-xl"
+                                                                smallerFontClass="text-base"  // ANGEPASST
+                                                                charThreshold={12}           // ANGEPASST
                                                             />
                                                             {timer.isCompleted && (
                                                                 <CheckCircle className="text-green-600 flex-shrink-0" size={18} />
@@ -472,13 +470,12 @@
                                             {/* Desktop Layout: Horizontal */}
                                             <div className="hidden sm:flex items-center justify-between gap-6">
                                                 <div className="flex-1 min-w-0">
-                                                     {/* Schriftgröße für Name wird hier von TimerNameDisplay gehandhabt */}
                                                     <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
                                                         <TimerNameDisplay
                                                             name={timer.name}
-                                                            baseFontClass="text-xl"     // Basis-Schriftgröße
-                                                            smallerFontClass="text-lg" // Kleinere Schriftgröße (ggf. text-base für stärkere Reduktion)
-                                                            charThreshold={25}          // Zeichenlimit für Desktop-Ansicht
+                                                            baseFontClass="text-xl"
+                                                            smallerFontClass="text-lg"
+                                                            charThreshold={20}        // ANGEPASST
                                                         />
                                                         {timer.isCompleted && (
                                                             <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
