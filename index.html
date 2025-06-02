@@ -77,7 +77,7 @@
             </svg>
         );
 
-        const TimerNameDisplay = ({ name, baseFontClass, smallerFontClass, charThreshold, className = "" }) => {
+        const TimerNameDisplay = ({ name, baseFontClass, smallerFontClass, charThreshold }) => {
             const [currentFontClass, setCurrentFontClass] = useState(baseFontClass);
 
             useEffect(() => {
@@ -89,7 +89,7 @@
             }, [name, charThreshold, baseFontClass, smallerFontClass]);
 
             return (
-                <span className={`truncate ${currentFontClass} ${className}`}>
+                <span className={`truncate ${currentFontClass}`}>
                     {name}
                 </span>
             );
@@ -223,7 +223,7 @@
 
                 let parts = [];
 
-                if (showSeconds) {
+                if (showSeconds) { 
                     if (days > 0) {
                         parts.push(`${days}d`);
                         parts.push(`${hours}h`);
@@ -236,10 +236,10 @@
                     } else if (minutes > 0) {
                         parts.push(`${minutes}m`);
                         parts.push(`${secs}s`);
-                    } else {
+                    } else { 
                         parts.push(`${secs}s`);
                     }
-                } else {
+                } else { 
                     if (days > 0) {
                         parts.push(`${days}d`);
                         parts.push(`${hours}h`);
@@ -332,16 +332,13 @@
                                             {/* Mobile Layout: Stacked */}
                                             <div className="block sm:hidden">
                                                 <div className="flex items-center justify-between mb-2">
-                                                    {/* Linker Teil: Name + Badges. Dieser Container soll flexibel sein und schrumpfen */}
                                                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                                                        {/* H3 ist nun ein Flex-Container für den Namen und das Check-Icon */}
                                                         <h3 className="font-semibold text-gray-800 flex items-center gap-1">
                                                             <TimerNameDisplay
                                                                 name={timer.name}
                                                                 baseFontClass="text-xl"
-                                                                smallerFontClass="text-base"
-                                                                charThreshold={12}
-                                                                className="min-w-0" /* WICHTIG für truncate in Flex-Item */
+                                                                smallerFontClass="text-base"  // ANGEPASST
+                                                                charThreshold={12}           // ANGEPASST
                                                             />
                                                             {timer.isCompleted && (
                                                                 <CheckCircle className="text-green-600 flex-shrink-0" size={18} />
@@ -352,7 +349,6 @@
                                                         )}
                                                     </div>
 
-                                                    {/* Rechter Teil: Aktionsbuttons, fester Platz */}
                                                     <div className="flex items-center gap-1 flex-shrink-0 ml-2">
                                                         {!timer.isCompleted && (
                                                             <button
@@ -473,14 +469,13 @@
 
                                             {/* Desktop Layout: Horizontal */}
                                             <div className="hidden sm:flex items-center justify-between gap-6">
-                                                <div className="flex-1 min-w-0"> {/* Dieses min-w-0 ist für den gesamten linken Block */}
+                                                <div className="flex-1 min-w-0">
                                                     <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
                                                         <TimerNameDisplay
                                                             name={timer.name}
                                                             baseFontClass="text-xl"
                                                             smallerFontClass="text-lg"
-                                                            charThreshold={20}
-                                                            className="min-w-0" /* WICHTIG für truncate in Flex-Item */
+                                                            charThreshold={20}        // ANGEPASST
                                                         />
                                                         {timer.isCompleted && (
                                                             <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
