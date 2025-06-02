@@ -75,10 +75,8 @@
         );
 
         const LaundryTimerApp = () => {
-            // --- ANPASSBARE SCHRIFTGRÖSSEN FÜR DEN TIMER ---
-            const TIMER_FONT_SIZE_MOBILE = "text-2xl sm:text-3xl"; // Vorher: text-3xl sm:text-4xl
-            const TIMER_FONT_SIZE_DESKTOP = "text-xl md:text-2xl"; // Vorher: text-2xl md:text-3xl
-            // --- ENDE ANPASSBARE SCHRIFTGRÖSSEN ---
+            const TIMER_FONT_SIZE_MOBILE = "text-2xl sm:text-3xl";
+            const TIMER_FONT_SIZE_DESKTOP = "text-xl md:text-2xl";
 
             const getInitialTimers = () => {
                 try {
@@ -235,7 +233,8 @@
 
                         {/* Neue Wäscheladung hinzufügen */}
                         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6">
-                            <h2 className="text-lg sm:text-xl font-semibold mb-4 text-gray-800">Neue Wäscheladung</h2>
+                            <h2 className="text-lg sm:text-xl font-semibold mb-2 text-gray-800">Neue Wäscheladung</h2> {/* mb-4 zu mb-2 geändert */}
+                            <div className="border-b border-gray-200 mb-4"></div> {/* NEUE LINIE */}
                             <div className="flex flex-col gap-3 sm:flex-row">
                                 <input
                                     type="text"
@@ -270,14 +269,13 @@
                                     <div
                                         key={timer.id}
                                         className={`relative overflow-hidden bg-white rounded-xl shadow-lg transition-all ${
-                                            timer.isCompleted ? 'opacity-75 bg-gray-50' : '' // Leichter grauer Hintergrund für fertige Timer
+                                            timer.isCompleted ? 'opacity-75 bg-gray-50' : ''
                                         }`}
                                     >
                                         <div className="relative p-4 sm:p-6">
                                             {/* Mobile Layout: Stacked */}
                                             <div className="block sm:hidden">
-                                                <div className="flex items-center justify-between mb-3">
-                                                    {/* BENENNUNG GRÖSSER */}
+                                                <div className="flex items-center justify-between mb-2"> {/* mb-3 zu mb-2 geändert */}
                                                     <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2 flex-1 min-w-0">
                                                         <span className="truncate">{timer.name}</span>
                                                         {timer.isCompleted && (
@@ -288,9 +286,9 @@
                                                         <span className="text-green-600 font-bold text-sm whitespace-nowrap">✓ 3 TAGE</span>
                                                     )}
                                                 </div>
+                                                <div className="border-b border-gray-200 mb-3"></div> {/* NEUE LINIE MOBILE */}
                                                 
                                                 <div className="text-center mb-4">
-                                                    {/* TIMER SCHRIFTGRÖSSE KLEINER (Mobile) */}
                                                     <div className={`${TIMER_FONT_SIZE_MOBILE} font-mono font-bold mb-1 ${
                                                         isTargetReached && !timer.isCompleted ? 'text-green-700' : (timer.isCompleted ? 'text-gray-700' : 'text-gray-800')
                                                     }`}>
@@ -409,8 +407,7 @@
                                             {/* Desktop Layout: Horizontal */}
                                             <div className="hidden sm:flex items-center justify-between gap-6">
                                                 <div className="flex-1 min-w-0">
-                                                    {/* BENENNUNG GRÖSSER */}
-                                                    <h3 className="text-xl font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                                                    <h3 className="text-xl font-semibold text-gray-800 mb-2 flex items-center gap-2"> {/* mb-1 zu mb-2 geändert */}
                                                         <span className="truncate">{timer.name}</span>
                                                         {timer.isCompleted && (
                                                             <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
@@ -419,6 +416,7 @@
                                                             <span className="text-green-600 font-bold text-sm flex-shrink-0">✓ 3 TAGE</span>
                                                         )}
                                                     </h3>
+                                                    <div className="border-b border-gray-200 mb-2"></div> {/* NEUE LINIE DESKTOP */}
                                                     <p className="text-sm text-gray-500 mb-2">
                                                         {editingTimer === timer.id && !timer.isCompleted ? (
                                                             <div className="flex gap-2 items-center">
@@ -484,7 +482,6 @@
                                                 </div>
 
                                                 <div className="text-center">
-                                                    {/* TIMER SCHRIFTGRÖSSE KLEINER (Desktop) */}
                                                     <div className={`${TIMER_FONT_SIZE_DESKTOP} font-mono font-bold ${
                                                         isTargetReached && !timer.isCompleted ? 'text-green-700' : (timer.isCompleted ? 'text-gray-700' : 'text-gray-800')
                                                     }`}>
