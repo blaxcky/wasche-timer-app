@@ -1,0 +1,21 @@
+{
+  "name": "Wäsche-Timer",
+  "short_name": "WäscheTimer",
+  "description": "Verfolgen Sie die Trockenzeit Ihrer Wäsche am Wäscheständer",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%232563eb'/%3E%3Cpath d='M30 35h40v30H30z' fill='white'/%3E%3Cpath d='M35 40h30v5H35z' fill='%232563eb'/%3E%3Cpath d='M35 50h30v5H35z' fill='%232563eb'/%3E%3Cpath d='M35 60h30v5H35z' fill='%232563eb'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%232563eb'/%3E%3Cpath d='M30 35h40v30H30z' fill='white'/%3E%3Cpath d='M35 40h30v5H35z' fill='%232563eb'/%3E%3Cpath d='M35 50h30v5H35z' fill='%232563eb'/%3E%3Cpath d='M35 60h30v5H35z' fill='%232563eb'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
