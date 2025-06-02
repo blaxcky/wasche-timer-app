@@ -21,8 +21,11 @@
         }
 
         .touch-target {
-            min-height: 48px;
-            min-width: 48px;
+            min-height: 48px; /* Mindestgröße für Touch-Ziele */
+            min-width: 48px;  /* Mindestgröße für Touch-Ziele */
+            display: inline-flex; /* Damit padding wirkt und Zentrierung der Icons */
+            align-items: center;
+            justify-content: center;
         }
 
         input[type="datetime-local"] {
@@ -233,8 +236,8 @@
 
                         {/* Neue Wäscheladung hinzufügen */}
                         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6">
-                            <h2 className="text-lg sm:text-xl font-semibold mb-2 text-gray-800">Neue Wäscheladung</h2> {/* mb-4 zu mb-2 geändert */}
-                            <div className="border-b border-gray-200 mb-4"></div> {/* NEUE LINIE */}
+                            <h2 className="text-lg sm:text-xl font-semibold mb-2 text-gray-800">Neue Wäscheladung</h2>
+                            <div className="border-b border-gray-200 mb-4"></div>
                             <div className="flex flex-col gap-3 sm:flex-row">
                                 <input
                                     type="text"
@@ -275,18 +278,43 @@
                                         <div className="relative p-4 sm:p-6">
                                             {/* Mobile Layout: Stacked */}
                                             <div className="block sm:hidden">
-                                                <div className="flex items-center justify-between mb-2"> {/* mb-3 zu mb-2 geändert */}
-                                                    <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2 flex-1 min-w-0">
-                                                        <span className="truncate">{timer.name}</span>
-                                                        {timer.isCompleted && (
-                                                            <CheckCircle className="text-green-600 flex-shrink-0" size={18} />
+                                                <div className="flex items-center justify-between mb-2">
+                                                    {/* Linker Teil: Titel + optionales "3 TAGE" Badge */}
+                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                        <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-1">
+                                                            <span className="truncate">{timer.name}</span>
+                                                            {timer.isCompleted && (
+                                                                <CheckCircle className="text-green-600 flex-shrink-0" size={18} />
+                                                            )}
+                                                        </h3>
+                                                        {isTargetReached && !timer.isCompleted && (
+                                                            <span className="text-green-600 font-bold text-xs whitespace-nowrap flex-shrink-0">✓ 3 TAGE</span>
                                                         )}
-                                                    </h3>
-                                                    {isTargetReached && !timer.isCompleted && (
-                                                        <span className="text-green-600 font-bold text-sm whitespace-nowrap">✓ 3 TAGE</span>
-                                                    )}
+                                                    </div>
+
+                                                    {/* Rechter Teil: Aktionsbuttons */}
+                                                    <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                                                        {!timer.isCompleted && (
+                                                            <button
+                                                                onClick={() => completeTimer(timer.id)}
+                                                                className="p-0 text-blue-600 hover:bg-blue-100 active:bg-blue-200 rounded-lg transition-colors touch-target"
+                                                                title="Als fertig markieren"
+                                                                style={{ padding: '10px' }} // Stellt sicher, dass das Klickziel groß genug ist
+                                                            >
+                                                                <CheckCircle size={22} />
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            onClick={() => deleteTimer(timer.id)}
+                                                            className="p-0 text-red-600 hover:bg-red-100 active:bg-red-200 rounded-lg transition-colors touch-target"
+                                                            title="Timer löschen"
+                                                            style={{ padding: '10px' }} // Stellt sicher, dass das Klickziel groß genug ist
+                                                        >
+                                                            <Trash2 size={22} />
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <div className="border-b border-gray-200 mb-3"></div> {/* NEUE LINIE MOBILE */}
+                                                <div className="border-b border-gray-200 mb-3"></div>
                                                 
                                                 <div className="text-center mb-4">
                                                     <div className={`${TIMER_FONT_SIZE_MOBILE} font-mono font-bold mb-1 ${
@@ -314,13 +342,13 @@
                                                             <div className="flex gap-2">
                                                                 <button
                                                                     onClick={saveEditTimer}
-                                                                    className="flex-1 py-2 bg-green-100 text-green-700 rounded-lg font-medium hover:bg-green-200 transition-colors touch-target"
+                                                                    className="flex-1 py-2 bg-green-100 text-green-700 rounded-lg font-medium hover:bg-green-200 transition-colors touch-target justify-center"
                                                                 >
                                                                     Speichern
                                                                 </button>
                                                                 <button
                                                                     onClick={cancelEditTimer}
-                                                                    className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors touch-target"
+                                                                    className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors touch-target justify-center"
                                                                 >
                                                                     Abbrechen
                                                                 </button>
@@ -347,10 +375,11 @@
                                                             {!timer.isCompleted && (
                                                                 <button
                                                                     onClick={() => startEditTimer(timer.id)}
-                                                                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-target"
+                                                                    className="p-0 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-target"
                                                                     title="Startzeit bearbeiten"
+                                                                    style={{ padding: '10px' }}
                                                                 >
-                                                                    <Edit size={18} />
+                                                                    <Edit size={20} /> {/* Angepasste Größe für Bearbeiten-Icon */}
                                                                 </button>
                                                             )}
                                                         </div>
@@ -380,34 +409,13 @@
                                                         </div>
                                                     </div>
                                                 )}
-
-                                                <div className="flex gap-3">
-                                                    {!timer.isCompleted && (
-                                                        <button
-                                                            onClick={() => completeTimer(timer.id)}
-                                                            className="flex-1 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 active:bg-blue-300 transition-colors flex items-center justify-center gap-2 font-medium touch-target"
-                                                        >
-                                                            <CheckCircle size={20} />
-                                                            Fertig
-                                                        </button>
-                                                    )}
-                                                    
-                                                    <button
-                                                        onClick={() => deleteTimer(timer.id)}
-                                                        className={`py-3 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 active:bg-red-300 transition-colors flex items-center justify-center gap-2 font-medium touch-target ${
-                                                            timer.isCompleted ? 'flex-1' : 'px-4'
-                                                        }`}
-                                                    >
-                                                        <Trash2 size={20} />
-                                                        {timer.isCompleted ? 'Löschen' : ''}
-                                                    </button>
-                                                </div>
+                                                {/* ENTFERNT: Der alte Button-Container wurde hier entfernt */}
                                             </div>
 
                                             {/* Desktop Layout: Horizontal */}
                                             <div className="hidden sm:flex items-center justify-between gap-6">
                                                 <div className="flex-1 min-w-0">
-                                                    <h3 className="text-xl font-semibold text-gray-800 mb-2 flex items-center gap-2"> {/* mb-1 zu mb-2 geändert */}
+                                                    <h3 className="text-xl font-semibold text-gray-800 mb-2 flex items-center gap-2">
                                                         <span className="truncate">{timer.name}</span>
                                                         {timer.isCompleted && (
                                                             <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
@@ -416,7 +424,7 @@
                                                             <span className="text-green-600 font-bold text-sm flex-shrink-0">✓ 3 TAGE</span>
                                                         )}
                                                     </h3>
-                                                    <div className="border-b border-gray-200 mb-2"></div> {/* NEUE LINIE DESKTOP */}
+                                                    <div className="border-b border-gray-200 mb-2"></div>
                                                     <p className="text-sm text-gray-500 mb-2">
                                                         {editingTimer === timer.id && !timer.isCompleted ? (
                                                             <div className="flex gap-2 items-center">
@@ -429,13 +437,13 @@
                                                                 <div className="flex gap-1">
                                                                     <button
                                                                         onClick={saveEditTimer}
-                                                                        className="px-3 py-1 bg-green-100 text-green-600 rounded text-sm hover:bg-green-200 transition-colors touch-target"
+                                                                        className="px-3 py-1 bg-green-100 text-green-600 rounded text-sm hover:bg-green-200 transition-colors touch-target justify-center"
                                                                     >
                                                                         ✓
                                                                     </button>
                                                                     <button
                                                                         onClick={cancelEditTimer}
-                                                                        className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200 transition-colors touch-target"
+                                                                        className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200 transition-colors touch-target justify-center"
                                                                     >
                                                                         ✕
                                                                     </button>
