@@ -21,9 +21,9 @@
         }
 
         .touch-target {
-            min-height: 48px; 
-            min-width: 48px;  
-            display: inline-flex; 
+            min-height: 48px;
+            min-width: 48px;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
         }
@@ -195,7 +195,7 @@
             };
 
             const formatTime = (totalSeconds, showSeconds = true) => {
-                if (totalSeconds < 0) totalSeconds = 0; 
+                if (totalSeconds < 0) totalSeconds = 0;
 
                 const days = Math.floor(totalSeconds / 86400);
                 const hours = Math.floor((totalSeconds % 86400) / 3600);
@@ -204,37 +204,38 @@
 
                 let parts = [];
 
-                if (days > 0) {
-                    parts.push(`${days}d`);
-                    parts.push(`${hours}h`);
-                    parts.push(`${minutes}m`);
-                    if (showSeconds) {
+                if (showSeconds) { // Standardanzeige mit Sekunden
+                    if (days > 0) {
+                        parts.push(`${days}d`);
+                        parts.push(`${hours}h`);
+                        parts.push(`${minutes}m`);
+                        parts.push(`${secs}s`);
+                    } else if (hours > 0) {
+                        parts.push(`${hours}h`);
+                        parts.push(`${minutes}m`);
+                        parts.push(`${secs}s`);
+                    } else if (minutes > 0) {
+                        parts.push(`${minutes}m`);
+                        parts.push(`${secs}s`);
+                    } else { // Nur Sekunden
                         parts.push(`${secs}s`);
                     }
-                } else if (hours > 0) {
-                    parts.push(`${hours}h`);
-                    parts.push(`${minutes}m`);
-                    if (showSeconds) {
-                        parts.push(`${secs}s`);
-                    }
-                } else if (minutes > 0) {
-                    parts.push(`${minutes}m`);
-                    if (showSeconds) {
-                        parts.push(`${secs}s`);
-                    }
-                } else { 
-                    if (showSeconds) {
-                        parts.push(`${secs}s`);
-                    } else {
+                } else { // Spezielle Anzeige für "Noch bis Ziel" (ohne Sekunden, und Minuten nur wenn < 1h)
+                    if (days > 0) {
+                        parts.push(`${days}d`);
+                        parts.push(`${hours}h`); // Stunden immer anzeigen, auch wenn 0, falls Tage > 0
+                    } else if (hours > 0) {
+                        parts.push(`${hours}h`);
+                    } else if (minutes > 0) { // Minuten nur, wenn keine Tage und keine Stunden
+                        parts.push(`${minutes}m`);
+                    } else { // Weniger als 1 Minute (oder genau 0)
                         parts.push(`0m`);
                     }
                 }
-                
-                if (totalSeconds === 0 && showSeconds && parts.length === 0) { // z.B. bei formatTime(0, true)
-                    return "0s";
-                }
-                if (totalSeconds === 0 && !showSeconds && parts.length === 0) { // z.B. bei formatTime(0, false)
-                     return "0m";
+
+                // Fallback, falls parts leer ist (sollte nur bei totalSeconds = 0 der Fall sein)
+                if (parts.length === 0) {
+                    return showSeconds ? "0s" : "0m";
                 }
 
                 return parts.join(' ');
@@ -332,7 +333,7 @@
                                                                 onClick={() => completeTimer(timer.id)}
                                                                 className="p-0 text-blue-600 hover:bg-blue-100 active:bg-blue-200 rounded-lg transition-colors touch-target"
                                                                 title="Als fertig markieren"
-                                                                style={{ padding: '10px' }} 
+                                                                style={{ padding: '10px' }}
                                                             >
                                                                 <CheckCircle size={22} />
                                                             </button>
@@ -341,14 +342,14 @@
                                                             onClick={() => deleteTimer(timer.id)}
                                                             className="p-0 text-red-600 hover:bg-red-100 active:bg-red-200 rounded-lg transition-colors touch-target"
                                                             title="Timer löschen"
-                                                            style={{ padding: '10px' }} 
+                                                            style={{ padding: '10px' }}
                                                         >
                                                             <Trash2 size={22} />
                                                         </button>
                                                     </div>
                                                 </div>
                                                 <div className="border-b border-gray-200 mb-3"></div>
-                                                
+
                                                 <div className="text-center mb-4">
                                                     <div className={`${TIMER_FONT_SIZE_MOBILE} font-mono font-bold mb-1 ${
                                                         isTargetReached && !timer.isCompleted ? 'text-green-700' : (timer.isCompleted ? 'text-gray-700' : 'text-gray-800')
@@ -418,7 +419,7 @@
                                                         </div>
                                                     )}
                                                 </div>
-                                                
+
                                                 {!timer.isCompleted && (
                                                     <div className="mb-4">
                                                         <div className="flex items-center gap-3 mb-2">
