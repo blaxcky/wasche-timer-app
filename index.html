@@ -21,9 +21,9 @@
         }
 
         .touch-target {
-            min-height: 48px; /* Mindestgröße für Touch-Ziele */
-            min-width: 48px;  /* Mindestgröße für Touch-Ziele */
-            display: inline-flex; /* Damit padding wirkt und Zentrierung der Icons */
+            min-height: 48px; 
+            min-width: 48px;  
+            display: inline-flex; 
             align-items: center;
             justify-content: center;
         }
@@ -194,19 +194,52 @@
                 }
             };
 
-            const formatTime = (seconds) => {
-                const days = Math.floor(seconds / 86400);
-                const hours = Math.floor((seconds % 86400) / 3600);
-                const minutes = Math.floor((seconds % 3600) / 60);
-                const secs = seconds % 60;
+            const formatTime = (totalSeconds, showSeconds = true) => {
+                if (totalSeconds < 0) totalSeconds = 0; 
+
+                const days = Math.floor(totalSeconds / 86400);
+                const hours = Math.floor((totalSeconds % 86400) / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const secs = totalSeconds % 60;
+
+                let parts = [];
 
                 if (days > 0) {
-                    return `${days}d ${hours}h ${minutes}m ${secs}s`;
+                    parts.push(`${days}d`);
+                    parts.push(`${hours}h`);
+                    parts.push(`${minutes}m`);
+                    if (showSeconds) {
+                        parts.push(`${secs}s`);
+                    }
                 } else if (hours > 0) {
-                    return `${hours}h ${minutes}m ${secs}s`;
+                    parts.push(`${hours}h`);
+                    parts.push(`${minutes}m`);
+                    if (showSeconds) {
+                        parts.push(`${secs}s`);
+                    }
+                } else if (minutes > 0) {
+                    parts.push(`${minutes}m`);
+                    if (showSeconds) {
+                        parts.push(`${secs}s`);
+                    }
+                } else { 
+                    if (showSeconds) {
+                        parts.push(`${secs}s`);
+                    } else {
+                        parts.push(`0m`);
+                    }
                 }
-                return `${minutes}m ${secs}s`;
+                
+                if (totalSeconds === 0 && showSeconds && parts.length === 0) { // z.B. bei formatTime(0, true)
+                    return "0s";
+                }
+                if (totalSeconds === 0 && !showSeconds && parts.length === 0) { // z.B. bei formatTime(0, false)
+                     return "0m";
+                }
+
+                return parts.join(' ');
             };
+
 
             const sortedTimers = timers
                 .slice()
@@ -267,6 +300,8 @@
                                 const targetSeconds = 3 * 24 * 60 * 60;
                                 const progressPercentage = Math.min((currentElapsedTime / targetSeconds) * 100, 100);
                                 const isTargetReached = currentElapsedTime >= targetSeconds;
+                                const timeRemainingForTarget = Math.max(0, targetSeconds - currentElapsedTime);
+
 
                                 return (
                                     <div
@@ -279,7 +314,6 @@
                                             {/* Mobile Layout: Stacked */}
                                             <div className="block sm:hidden">
                                                 <div className="flex items-center justify-between mb-2">
-                                                    {/* Linker Teil: Titel + optionales "3 TAGE" Badge */}
                                                     <div className="flex items-center gap-2 flex-1 min-w-0">
                                                         <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-1">
                                                             <span className="truncate">{timer.name}</span>
@@ -292,14 +326,13 @@
                                                         )}
                                                     </div>
 
-                                                    {/* Rechter Teil: Aktionsbuttons */}
                                                     <div className="flex items-center gap-1 flex-shrink-0 ml-2">
                                                         {!timer.isCompleted && (
                                                             <button
                                                                 onClick={() => completeTimer(timer.id)}
                                                                 className="p-0 text-blue-600 hover:bg-blue-100 active:bg-blue-200 rounded-lg transition-colors touch-target"
                                                                 title="Als fertig markieren"
-                                                                style={{ padding: '10px' }} // Stellt sicher, dass das Klickziel groß genug ist
+                                                                style={{ padding: '10px' }} 
                                                             >
                                                                 <CheckCircle size={22} />
                                                             </button>
@@ -308,7 +341,7 @@
                                                             onClick={() => deleteTimer(timer.id)}
                                                             className="p-0 text-red-600 hover:bg-red-100 active:bg-red-200 rounded-lg transition-colors touch-target"
                                                             title="Timer löschen"
-                                                            style={{ padding: '10px' }} // Stellt sicher, dass das Klickziel groß genug ist
+                                                            style={{ padding: '10px' }} 
                                                         >
                                                             <Trash2 size={22} />
                                                         </button>
@@ -379,7 +412,7 @@
                                                                     title="Startzeit bearbeiten"
                                                                     style={{ padding: '10px' }}
                                                                 >
-                                                                    <Edit size={20} /> {/* Angepasste Größe für Bearbeiten-Icon */}
+                                                                    <Edit size={20} />
                                                                 </button>
                                                             )}
                                                         </div>
@@ -404,12 +437,11 @@
                                                         <div className="text-center text-sm text-gray-600">
                                                             {isTargetReached
                                                                 ? '🎉 Ziel erreicht!'
-                                                                : `Noch ${formatTime(targetSeconds - currentElapsedTime)} bis zum 3-Tage-Ziel`
+                                                                : `Noch ${formatTime(timeRemainingForTarget, false)} bis zum 3-Tage-Ziel`
                                                             }
                                                         </div>
                                                     </div>
                                                 )}
-                                                {/* ENTFERNT: Der alte Button-Container wurde hier entfernt */}
                                             </div>
 
                                             {/* Desktop Layout: Horizontal */}
@@ -482,7 +514,7 @@
                                                             <div className="mt-1 text-xs">
                                                                 {isTargetReached
                                                                     ? '🎉 Ziel erreicht!'
-                                                                    : `Noch ${formatTime(targetSeconds - currentElapsedTime)} bis zum 3-Tage-Ziel`
+                                                                    : `Noch ${formatTime(timeRemainingForTarget, false)} bis zum 3-Tage-Ziel`
                                                                 }
                                                             </div>
                                                         </div>
