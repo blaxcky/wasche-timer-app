@@ -31,29 +31,6 @@
         input[type="datetime-local"] {
             font-size: 16px;
         }
-
-        .title-container {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.5rem;
-            min-width: 0;
-            flex: 1;
-        }
-
-        .title-text {
-            word-break: break-word;
-            hyphens: auto;
-            line-height: 1.3;
-            min-width: 0;
-            flex: 1;
-        }
-
-        .button-container {
-            display: flex;
-            gap: 0.25rem;
-            flex-shrink: 0;
-            margin-left: 0.5rem;
-        }
     </style>
 </head>
 <body>
@@ -106,14 +83,16 @@
 
             const getInitialTimers = () => {
                 try {
-                    const data = `[{"id":1733162800000,"name":"Buntwäsche","startTime":"2024-12-02T19:00:00.000Z","completedElapsedTime":null,"isCompleted":false,"completionTime":null},{"id":1733163200000,"name":"Sehr lange Bezeichnung für eine Wäscheladung die normalerweise viel zu lang wäre","startTime":"2024-12-02T19:06:40.000Z","completedElapsedTime":null,"isCompleted":false,"completionTime":null}]`;
-                    return JSON.parse(data).map(timer => ({
-                        ...timer,
-                        startTime: new Date(timer.startTime),
-                        completionTime: timer.completionTime ? new Date(timer.completionTime) : null
-                    }));
+                    const storedTimers = localStorage.getItem('laundryTimers');
+                    if (storedTimers) {
+                        return JSON.parse(storedTimers).map(timer => ({
+                            ...timer,
+                            startTime: new Date(timer.startTime),
+                            completionTime: timer.completionTime ? new Date(timer.completionTime) : null
+                        }));
+                    }
                 } catch (e) {
-                    console.error("Fehler beim Laden der Timer:", e);
+                    console.error("Fehler beim Laden der Timer aus localStorage:", e);
                 }
                 return [];
             };
@@ -123,6 +102,10 @@
             const [editingTimer, setEditingTimer] = useState(null);
             const [editDateTime, setEditDateTime] = useState('');
             const [currentTime, setCurrentTime] = useState(new Date());
+
+            useEffect(() => {
+                localStorage.setItem('laundryTimers', JSON.stringify(timers));
+            }, [timers]);
 
             useEffect(() => {
                 const interval = setInterval(() => {
@@ -221,7 +204,7 @@
 
                 let parts = [];
 
-                if (showSeconds) {
+                if (showSeconds) { // Standardanzeige mit Sekunden
                     if (days > 0) {
                         parts.push(`${days}d`);
                         parts.push(`${hours}h`);
@@ -234,28 +217,30 @@
                     } else if (minutes > 0) {
                         parts.push(`${minutes}m`);
                         parts.push(`${secs}s`);
-                    } else {
+                    } else { // Nur Sekunden
                         parts.push(`${secs}s`);
                     }
-                } else {
+                } else { // Spezielle Anzeige für "Noch bis Ziel" (ohne Sekunden, und Minuten nur wenn < 1h)
                     if (days > 0) {
                         parts.push(`${days}d`);
-                        parts.push(`${hours}h`);
+                        parts.push(`${hours}h`); // Stunden immer anzeigen, auch wenn 0, falls Tage > 0
                     } else if (hours > 0) {
                         parts.push(`${hours}h`);
-                    } else if (minutes > 0) {
+                    } else if (minutes > 0) { // Minuten nur, wenn keine Tage und keine Stunden
                         parts.push(`${minutes}m`);
-                    } else {
+                    } else { // Weniger als 1 Minute (oder genau 0)
                         parts.push(`0m`);
                     }
                 }
 
+                // Fallback, falls parts leer ist (sollte nur bei totalSeconds = 0 der Fall sein)
                 if (parts.length === 0) {
                     return showSeconds ? "0s" : "0m";
                 }
 
                 return parts.join(' ');
             };
+
 
             const sortedTimers = timers
                 .slice()
@@ -318,6 +303,7 @@
                                 const isTargetReached = currentElapsedTime >= targetSeconds;
                                 const timeRemainingForTarget = Math.max(0, targetSeconds - currentElapsedTime);
 
+
                                 return (
                                     <div
                                         key={timer.id}
@@ -328,33 +314,35 @@
                                         <div className="relative p-4 sm:p-6">
                                             {/* Mobile Layout: Stacked */}
                                             <div className="block sm:hidden">
-                                                <div className="flex items-start justify-between mb-2 gap-2">
-                                                    <div className="title-container">
-                                                        <h3 className="title-text text-xl font-semibold text-gray-800 flex flex-wrap items-center gap-1">
-                                                            <span>{timer.name}</span>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                        <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-1">
+                                                            <span className="truncate">{timer.name}</span>
                                                             {timer.isCompleted && (
                                                                 <CheckCircle className="text-green-600 flex-shrink-0" size={18} />
                                                             )}
-                                                            {isTargetReached && !timer.isCompleted && (
-                                                                <span className="text-green-600 font-bold text-xs flex-shrink-0">✓ 3 TAGE</span>
-                                                            )}
                                                         </h3>
+                                                        {isTargetReached && !timer.isCompleted && (
+                                                            <span className="text-green-600 font-bold text-xs whitespace-nowrap flex-shrink-0">✓ 3 TAGE</span>
+                                                        )}
                                                     </div>
 
-                                                    <div className="button-container">
+                                                    <div className="flex items-center gap-1 flex-shrink-0 ml-2">
                                                         {!timer.isCompleted && (
                                                             <button
                                                                 onClick={() => completeTimer(timer.id)}
-                                                                className="p-2 text-blue-600 hover:bg-blue-100 active:bg-blue-200 rounded-lg transition-colors touch-target"
+                                                                className="p-0 text-blue-600 hover:bg-blue-100 active:bg-blue-200 rounded-lg transition-colors touch-target"
                                                                 title="Als fertig markieren"
+                                                                style={{ padding: '10px' }}
                                                             >
                                                                 <CheckCircle size={22} />
                                                             </button>
                                                         )}
                                                         <button
                                                             onClick={() => deleteTimer(timer.id)}
-                                                            className="p-2 text-red-600 hover:bg-red-100 active:bg-red-200 rounded-lg transition-colors touch-target"
+                                                            className="p-0 text-red-600 hover:bg-red-100 active:bg-red-200 rounded-lg transition-colors touch-target"
                                                             title="Timer löschen"
+                                                            style={{ padding: '10px' }}
                                                         >
                                                             <Trash2 size={22} />
                                                         </button>
@@ -402,7 +390,7 @@
                                                         </div>
                                                     ) : (
                                                         <div className="flex items-center justify-between">
-                                                            <div className="text-sm text-gray-500 flex-1 mr-2">
+                                                            <div className="text-sm text-gray-500 flex-1">
                                                                 <div>Gestartet:</div>
                                                                 <div className="font-medium text-gray-700">
                                                                     {timer.startTime.toLocaleDateString('de-DE', {
@@ -421,8 +409,9 @@
                                                             {!timer.isCompleted && (
                                                                 <button
                                                                     onClick={() => startEditTimer(timer.id)}
-                                                                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-target flex-shrink-0"
+                                                                    className="p-0 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-target"
                                                                     title="Startzeit bearbeiten"
+                                                                    style={{ padding: '10px' }}
                                                                 >
                                                                     <Edit size={20} />
                                                                 </button>
@@ -459,19 +448,15 @@
                                             {/* Desktop Layout: Horizontal */}
                                             <div className="hidden sm:flex items-center justify-between gap-6">
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="flex items-start justify-between gap-4 mb-2">
-                                                        <div className="title-container">
-                                                            <h3 className="title-text text-xl font-semibold text-gray-800 flex flex-wrap items-center gap-2">
-                                                                <span>{timer.name}</span>
-                                                                {timer.isCompleted && (
-                                                                    <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
-                                                                )}
-                                                                {isTargetReached && !timer.isCompleted && (
-                                                                    <span className="text-green-600 font-bold text-sm flex-shrink-0">✓ 3 TAGE</span>
-                                                                )}
-                                                            </h3>
-                                                        </div>
-                                                    </div>
+                                                    <h3 className="text-xl font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                                                        <span className="truncate">{timer.name}</span>
+                                                        {timer.isCompleted && (
+                                                            <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
+                                                        )}
+                                                        {isTargetReached && !timer.isCompleted && (
+                                                            <span className="text-green-600 font-bold text-sm flex-shrink-0">✓ 3 TAGE</span>
+                                                        )}
+                                                    </h3>
                                                     <div className="border-b border-gray-200 mb-2"></div>
                                                     <p className="text-sm text-gray-500 mb-2">
                                                         {editingTimer === timer.id && !timer.isCompleted ? (
@@ -537,7 +522,7 @@
                                                     )}
                                                 </div>
 
-                                                <div className="text-center flex-shrink-0">
+                                                <div className="text-center">
                                                     <div className={`${TIMER_FONT_SIZE_DESKTOP} font-mono font-bold ${
                                                         isTargetReached && !timer.isCompleted ? 'text-green-700' : (timer.isCompleted ? 'text-gray-700' : 'text-gray-800')
                                                     }`}>
@@ -551,7 +536,7 @@
                                                     </div>
                                                 </div>
 
-                                                <div className="flex gap-2 flex-shrink-0">
+                                                <div className="flex gap-2">
                                                     {!timer.isCompleted && (
                                                         <button
                                                             onClick={() => completeTimer(timer.id)}
