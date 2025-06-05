@@ -400,47 +400,46 @@
                            </div>
                        </div>
 
-                       {/* Timer-Liste */}
-                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                           {sortedTimers.map(timer => renderCompactTimer(timer))}
-                       </div>
-
-                       {/* Statistiken */}
+                       {/* Kompakte Übersicht */}
                        {timers.length > 0 && (
-                           <div className="mt-6 bg-white rounded-xl shadow-lg p-4 sm:p-6">
-                               <h3 className="text-lg font-semibold text-gray-800 mb-4">Übersicht</h3>
-                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-                                   <div className="bg-blue-50 rounded-lg p-3">
-                                       <div className="text-2xl font-bold text-blue-600">
+                           <div className="bg-white rounded-lg shadow-md p-3 mb-4">
+                               <div className="flex justify-between items-center text-center">
+                                   <div className="flex-1">
+                                       <div className="text-lg font-bold text-blue-600">
                                            {timers.filter(t => !t.isCompleted).length}
                                        </div>
-                                       <div className="text-sm text-gray-600">Aktiv</div>
+                                       <div className="text-xs text-gray-600">Aktiv</div>
                                    </div>
-                                   <div className="bg-green-50 rounded-lg p-3">
-                                       <div className="text-2xl font-bold text-green-600">
+                                   <div className="flex-1">
+                                       <div className="text-lg font-bold text-green-600">
                                            {timers.filter(t => t.isCompleted).length}
                                        </div>
-                                       <div className="text-sm text-gray-600">Fertig</div>
+                                       <div className="text-xs text-gray-600">Fertig</div>
                                    </div>
-                                   <div className="bg-yellow-50 rounded-lg p-3">
-                                       <div className="text-2xl font-bold text-yellow-600">
+                                   <div className="flex-1">
+                                       <div className="text-lg font-bold text-yellow-600">
                                            {timers.filter(t => {
                                                if (t.isCompleted) return false;
                                                const elapsed = Math.floor((currentTime.getTime() - t.startTime.getTime()) / 1000);
                                                return elapsed >= (3 * 24 * 60 * 60);
                                            }).length}
                                        </div>
-                                       <div className="text-sm text-gray-600">Ziel erreicht</div>
+                                       <div className="text-xs text-gray-600">Ziel erreicht</div>
                                    </div>
-                                   <div className="bg-gray-50 rounded-lg p-3">
-                                       <div className="text-2xl font-bold text-gray-600">
+                                   <div className="flex-1">
+                                       <div className="text-lg font-bold text-gray-600">
                                            {timers.length}
                                        </div>
-                                       <div className="text-sm text-gray-600">Gesamt</div>
+                                       <div className="text-xs text-gray-600">Gesamt</div>
                                    </div>
                                </div>
                            </div>
                        )}
+
+                       {/* Timer-Liste */}
+                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                           {sortedTimers.map(timer => renderCompactTimer(timer))}
+                       </div>
 
                        {timers.length === 0 && (
                            <div className="text-center py-12">
