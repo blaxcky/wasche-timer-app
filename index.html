@@ -94,30 +94,8 @@
             </svg>
         );
 
-        // View Toggle Icons
-        const List = ({ size = 24 }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="8" y1="6" x2="21" y2="6"/>
-                <line x1="8" y1="12" x2="21" y2="12"/>
-                <line x1="8" y1="18" x2="21" y2="18"/>
-                <line x1="3" y1="6" x2="3.01" y2="6"/>
-                <line x1="3" y1="12" x2="3.01" y2="12"/>
-                <line x1="3" y1="18" x2="3.01" y2="18"/>
-            </svg>
-        );
-
-        const Grid = ({ size = 24 }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="3" width="7" height="7"/>
-                <rect x="14" y="3" width="7" height="7"/>
-                <rect x="14" y="14" width="7" height="7"/>
-                <rect x="3" y="14" width="7" height="7"/>
-            </svg>
-        );
 
         const LaundryTimerApp = () => {
-            const TIMER_FONT_SIZE_MOBILE = "text-2xl sm:text-3xl";
-            const TIMER_FONT_SIZE_DESKTOP = "text-xl md:text-2xl";
 
             const getInitialTimers = () => {
                 try {
@@ -135,29 +113,17 @@
                 return [];
             };
 
-            const getInitialViewMode = () => {
-                try {
-                    const storedViewMode = localStorage.getItem('laundryTimerViewMode');
-                    return storedViewMode || 'detailed';
-                } catch (e) {
-                    return 'detailed';
-                }
-            };
 
             const [timers, setTimers] = useState(getInitialTimers);
             const [newLoadName, setNewLoadName] = useState('');
             const [editingTimer, setEditingTimer] = useState(null);
             const [editDateTime, setEditDateTime] = useState('');
             const [currentTime, setCurrentTime] = useState(new Date());
-            const [viewMode, setViewMode] = useState(getInitialViewMode);
 
             useEffect(() => {
                 localStorage.setItem('laundryTimers', JSON.stringify(timers));
             }, [timers]);
 
-            useEffect(() => {
-                localStorage.setItem('laundryTimerViewMode', viewMode);
-            }, [viewMode]);
 
             useEffect(() => {
                 const interval = setInterval(() => {
@@ -397,273 +363,6 @@
                 );
             };
 
-            const renderDetailedTimer = (timer) => {
-                const currentElapsedTime = timer.isCompleted
-                    ? timer.completedElapsedTime
-                    : Math.floor((currentTime.getTime() - timer.startTime.getTime()) / 1000);
-
-                const targetSeconds = 3 * 24 * 60 * 60;
-                const progressPercentage = Math.min((currentElapsedTime / targetSeconds) * 100, 100);
-                const isTargetReached = currentElapsedTime >= targetSeconds;
-                const timeRemainingForTarget = Math.max(0, targetSeconds - currentElapsedTime);
-
-                return (
-                    <div
-                        key={timer.id}
-                        className={`relative overflow-hidden bg-white rounded-xl shadow-lg transition-all ${
-                            timer.isCompleted ? 'opacity-75 bg-gray-50' : ''
-                        }`}
-                    >
-                        <div className="relative p-4 sm:p-6">
-                            {/* Mobile Layout: Stacked */}
-                            <div className="block sm:hidden">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <div className="flex-1 min-w-0 pr-2">
-                                        <h3 className="text-xl font-semibold text-gray-800 break-words hyphens-auto leading-tight max-w-full overflow-wrap-anywhere">
-                                            {timer.name}
-                                        </h3>
-                                        <div className="flex flex-wrap items-center gap-1 mt-1">
-                                            {timer.isCompleted && (
-                                                <CheckCircle className="text-green-600" size={18} />
-                                            )}
-                                            {isTargetReached && !timer.isCompleted && (
-                                                <span className="text-green-600 font-bold text-xs">✓ 3 TAGE</span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-1 flex-shrink-0 min-w-0 self-start">
-                                        {!timer.isCompleted && (
-                                            <button
-                                                onClick={() => completeTimer(timer.id)}
-                                                className="p-2 text-blue-600 hover:bg-blue-100 active:bg-blue-200 rounded-lg transition-colors touch-target"
-                                                title="Als fertig markieren"
-                                            >
-                                                <CheckCircle size={22} />
-                                            </button>
-                                        )}
-                                        <button
-                                            onClick={() => deleteTimer(timer.id)}
-                                            className="p-2 text-red-600 hover:bg-red-100 active:bg-red-200 rounded-lg transition-colors touch-target"
-                                            title="Timer löschen"
-                                        >
-                                            <Trash2 size={22} />
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="border-b border-gray-200 mb-3"></div>
-
-                                <div className="text-center mb-4">
-                                    <div className={`${TIMER_FONT_SIZE_MOBILE} font-mono font-bold mb-1 ${
-                                        isTargetReached && !timer.isCompleted ? 'text-green-700' : (timer.isCompleted ? 'text-gray-700' : 'text-gray-800')
-                                    }`}>
-                                        {formatTime(currentElapsedTime)}
-                                    </div>
-                                    <div className="text-sm text-gray-500">
-                                        {timer.isCompleted
-                                            ? `Fertig seit: ${timer.completionTime.toLocaleDateString('de-DE')} ${timer.completionTime.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})}`
-                                            : 'Läuft...'
-                                        }
-                                    </div>
-                                </div>
-
-                                <div className="mb-4">
-                                    {editingTimer === timer.id ? (
-                                        <div className="space-y-3">
-                                            <input
-                                                type="datetime-local"
-                                                value={editDateTime}
-                                                onChange={(e) => setEditDateTime(e.target.value)}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={saveEditTimer}
-                                                    className="flex-1 py-2 bg-green-100 text-green-700 rounded-lg font-medium hover:bg-green-200 transition-colors touch-target justify-center"
-                                                >
-                                                    Speichern
-                                                </button>
-                                                <button
-                                                    onClick={cancelEditTimer}
-                                                    className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors touch-target justify-center"
-                                                >
-                                                    Abbrechen
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center justify-between">
-                                            <div className="text-sm text-gray-500 flex-1 mr-2">
-                                                <div>Gestartet:</div>
-                                                <div className="font-medium text-gray-700">
-                                                    {timer.startTime.toLocaleDateString('de-DE', {
-                                                        day: '2-digit',
-                                                        month: '2-digit',
-                                                        year: 'numeric'
-                                                    })}
-                                                </div>
-                                                <div className="font-medium text-gray-700">
-                                                    {timer.startTime.toLocaleTimeString('de-DE', {
-                                                        hour: '2-digit',
-                                                        minute: '2-digit'
-                                                    })}
-                                                </div>
-                                            </div>
-                                            {!timer.isCompleted && (
-                                                <button
-                                                    onClick={() => startEditTimer(timer.id)}
-                                                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors touch-target flex-shrink-0"
-                                                    title="Startzeit bearbeiten"
-                                                >
-                                                    <Edit size={20} />
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {!timer.isCompleted && (
-                                    <div className="mb-4">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className="flex-1 bg-gray-200 rounded-full h-3">
-                                                <div
-                                                    className={`h-3 rounded-full transition-all duration-1000 ${
-                                                        isTargetReached ? 'bg-green-500' : 'bg-blue-500'
-                                                    }`}
-                                                    style={{ width: `${progressPercentage}%` }}
-                                                />
-                                            </div>
-                                            <span className="text-sm font-medium min-w-fit">
-                                                {Math.round(progressPercentage)}%
-                                            </span>
-                                        </div>
-                                        <div className="text-center text-sm text-gray-600">
-                                            {isTargetReached
-                                                ? '🎉 Ziel erreicht!'
-                                                : `Noch ${formatTime(timeRemainingForTarget, false)} bis zum 3-Tage-Ziel`
-                                            }
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Desktop Layout: Horizontal */}
-                            <div className="hidden sm:flex items-center justify-between gap-6">
-                                <div className="flex-1 min-w-0 pr-4">
-                                    <h3 className="text-xl font-semibold text-gray-800 mb-1 break-words hyphens-auto leading-tight max-w-full overflow-wrap-anywhere">
-                                        {timer.name}
-                                    </h3>
-                                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                                        {timer.isCompleted && (
-                                            <CheckCircle className="text-green-600" size={20} />
-                                        )}
-                                        {isTargetReached && !timer.isCompleted && (
-                                            <span className="text-green-600 font-bold text-sm">✓ 3 TAGE</span>
-                                        )}
-                                    </div>
-                                    <div className="border-b border-gray-200 mb-2"></div>
-                                    <p className="text-sm text-gray-500 mb-2">
-                                        {editingTimer === timer.id && !timer.isCompleted ? (
-                                            <div className="flex gap-2 items-center">
-                                                <input
-                                                    type="datetime-local"
-                                                    value={editDateTime}
-                                                    onChange={(e) => setEditDateTime(e.target.value)}
-                                                    className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                />
-                                                <div className="flex gap-1">
-                                                    <button
-                                                        onClick={saveEditTimer}
-                                                        className="px-3 py-1 bg-green-100 text-green-600 rounded text-sm hover:bg-green-200 transition-colors touch-target justify-center"
-                                                    >
-                                                        ✓
-                                                    </button>
-                                                    <button
-                                                        onClick={cancelEditTimer}
-                                                        className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200 transition-colors touch-target justify-center"
-                                                    >
-                                                        ✕
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <span>
-                                                Gestartet: {timer.startTime.toLocaleString('de-DE')}
-                                                {!timer.isCompleted && (
-                                                    <button
-                                                        onClick={() => startEditTimer(timer.id)}
-                                                        className="ml-2 p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors touch-target"
-                                                        title="Startzeit bearbeiten"
-                                                    >
-                                                        <Edit size={16} />
-                                                    </button>
-                                                )}
-                                            </span>
-                                        )}
-                                    </p>
-                                    {!timer.isCompleted && (
-                                        <div className="text-sm text-gray-600">
-                                            <div className="flex items-center gap-2">
-                                                <div className="flex-1 bg-gray-200 rounded-full h-2">
-                                                    <div
-                                                        className={`h-2 rounded-full transition-all duration-1000 ${
-                                                            isTargetReached ? 'bg-green-500' : 'bg-blue-500'
-                                                        }`}
-                                                        style={{ width: `${progressPercentage}%` }}
-                                                    />
-                                                </div>
-                                                <span className="text-xs font-medium min-w-fit">
-                                                    {Math.round(progressPercentage)}%
-                                                </span>
-                                            </div>
-                                            <div className="mt-1 text-xs">
-                                                {isTargetReached
-                                                    ? '🎉 Ziel erreicht!'
-                                                    : `Noch ${formatTime(timeRemainingForTarget, false)} bis zum 3-Tage-Ziel`
-                                                }
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="text-center flex-shrink-0">
-                                    <div className={`${TIMER_FONT_SIZE_DESKTOP} font-mono font-bold ${
-                                       isTargetReached && !timer.isCompleted ? 'text-green-700' : (timer.isCompleted ? 'text-gray-700' : 'text-gray-800')
-                                   }`}>
-                                       {formatTime(currentElapsedTime)}
-                                   </div>
-                                   <div className="text-sm text-gray-500">
-                                       {timer.isCompleted
-                                           ? `Fertig seit: ${timer.completionTime.toLocaleDateString('de-DE')} ${timer.completionTime.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})}`
-                                           : 'Läuft...'
-                                       }
-                                   </div>
-                               </div>
-
-                               <div className="flex gap-2 flex-shrink-0">
-                                   {!timer.isCompleted && (
-                                       <button
-                                           onClick={() => completeTimer(timer.id)}
-                                           className="p-3 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 active:bg-blue-300 transition-colors touch-target"
-                                           title="Als fertig markieren"
-                                       >
-                                           <CheckCircle size={20} />
-                                       </button>
-                                   )}
-
-                                   <button
-                                       onClick={() => deleteTimer(timer.id)}
-                                       className="p-3 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 active:bg-red-300 transition-colors touch-target"
-                                       title="Timer löschen"
-                                   >
-                                       <Trash2 size={20} />
-                                   </button>
-                               </div>
-                           </div>
-                       </div>
-                   </div>
-               );
-           };
 
            return (
                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-3 sm:p-4">
@@ -677,33 +376,6 @@
                            <p className="text-gray-600 text-sm sm:text-base px-4">Verfolgen Sie die Trockenzeit Ihrer Wäsche am Wäscheständer</p>
                        </div>
 
-                       {/* View Toggle */}
-                       <div className="flex justify-center mb-6">
-                           <div className="bg-white rounded-lg shadow-md p-1 flex">
-                               <button
-                                   onClick={() => setViewMode('detailed')}
-                                   className={`view-toggle-btn flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-all ${
-                                       viewMode === 'detailed'
-                                           ? 'bg-blue-600 text-white shadow-md'
-                                           : 'text-gray-600 hover:bg-gray-100'
-                                   }`}
-                               >
-                                   <List size={18} />
-                                   <span className="hidden sm:inline">Detailansicht</span>
-                               </button>
-                               <button
-                                   onClick={() => setViewMode('compact')}
-                                   className={`view-toggle-btn flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-all ${
-                                       viewMode === 'compact'
-                                           ? 'bg-blue-600 text-white shadow-md'
-                                           : 'text-gray-600 hover:bg-gray-100'
-                                   }`}
-                               >
-                                   <Grid size={18} />
-                                   <span className="hidden sm:inline">Kompaktansicht</span>
-                               </button>
-                           </div>
-                       </div>
 
                        {/* Neue Wäscheladung hinzufügen */}
                        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6">
@@ -729,20 +401,12 @@
                        </div>
 
                        {/* Timer-Liste */}
-                       {viewMode === 'compact' ? (
-                           // Kompakte Grid-Ansicht
-                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                               {sortedTimers.map(timer => renderCompactTimer(timer))}
-                           </div>
-                       ) : (
-                           // Detaillierte Listen-Ansicht
-                           <div className="space-y-4">
-                               {sortedTimers.map(timer => renderDetailedTimer(timer))}
-                           </div>
-                       )}
+                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                           {sortedTimers.map(timer => renderCompactTimer(timer))}
+                       </div>
 
-                       {/* Statistiken in kompakter Ansicht */}
-                       {viewMode === 'compact' && timers.length > 0 && (
+                       {/* Statistiken */}
+                       {timers.length > 0 && (
                            <div className="mt-6 bg-white rounded-xl shadow-lg p-4 sm:p-6">
                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Übersicht</h3>
                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
