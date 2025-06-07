@@ -94,6 +94,22 @@
             </svg>
         );
 
+        const Download = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7,10 12,15 17,10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+        );
+
+        const Upload = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17,8 12,3 7,8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+        );
+
 
         const LaundryTimerApp = () => {
 
@@ -209,6 +225,101 @@
 
                 if (window.confirm(confirmMessage)) {
                     setTimers(prevTimers => prevTimers.filter(timer => timer.id !== id));
+                }
+            };
+
+            const saveTimersToFile = async () => {
+                try {
+                    if ('showSaveFilePicker' in window) {
+                        const fileHandle = await window.showSaveFilePicker({
+                            suggestedName: `wasche-timer-backup-${new Date().toISOString().split('T')[0]}.json`,
+                            types: [{
+                                description: 'Wäsche-Timer Backup',
+                                accept: { 'application/json': ['.json'] }
+                            }]
+                        });
+                        
+                        const writable = await fileHandle.createWritable();
+                        await writable.write(JSON.stringify(timers, null, 2));
+                        await writable.close();
+                        
+                        alert('Timer erfolgreich gespeichert!');
+                    } else {
+                        const blob = new Blob([JSON.stringify(timers, null, 2)], {type: 'application/json'});
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `wasche-timer-backup-${new Date().toISOString().split('T')[0]}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                    }
+                } catch (error) {
+                    if (error.name !== 'AbortError') {
+                        console.error('Fehler beim Speichern:', error);
+                        alert('Fehler beim Speichern der Timer-Daten');
+                    }
+                }
+            };
+
+            const loadTimersFromFile = async () => {
+                try {
+                    let file;
+                    
+                    if ('showOpenFilePicker' in window) {
+                        const [fileHandle] = await window.showOpenFilePicker({
+                            types: [{
+                                description: 'Wäsche-Timer Backup',
+                                accept: { 'application/json': ['.json'] }
+                            }]
+                        });
+                        file = await fileHandle.getFile();
+                    } else {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = '.json';
+                        input.onchange = async (e) => {
+                            file = e.target.files[0];
+                            if (file) {
+                                await processImportedFile(file);
+                            }
+                        };
+                        input.click();
+                        return;
+                    }
+                    
+                    await processImportedFile(file);
+                } catch (error) {
+                    if (error.name !== 'AbortError') {
+                        console.error('Fehler beim Laden:', error);
+                        alert('Fehler beim Laden der Timer-Daten');
+                    }
+                }
+            };
+
+            const processImportedFile = async (file) => {
+                try {
+                    const contents = await file.text();
+                    const importedTimers = JSON.parse(contents);
+                    
+                    if (!Array.isArray(importedTimers)) {
+                        throw new Error('Ungültiges Dateiformat');
+                    }
+                    
+                    const processedTimers = importedTimers.map(timer => ({
+                        ...timer,
+                        startTime: new Date(timer.startTime),
+                        completionTime: timer.completionTime ? new Date(timer.completionTime) : null
+                    }));
+                    
+                    const confirmMessage = `${importedTimers.length} Timer gefunden.\n\nMöchten Sie diese importieren?\n\n⚠️ Achtung: Ihre aktuellen Timer werden ersetzt!`;
+                    
+                    if (window.confirm(confirmMessage)) {
+                        setTimers(processedTimers);
+                        alert('Timer erfolgreich importiert!');
+                    }
+                } catch (error) {
+                    console.error('Fehler beim Verarbeiten der Datei:', error);
+                    alert('Ungültige Timer-Datei. Bitte überprüfen Sie das Dateiformat.');
                 }
             };
 
@@ -399,6 +510,32 @@
                                </button>
                            </div>
                        </div>
+
+                       {/* Backup/Restore Bereich */}
+                       {timers.length > 0 && (
+                           <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+                               <h3 className="text-md font-semibold mb-3 text-gray-800">Backup & Wiederherstellung</h3>
+                               <div className="flex flex-col sm:flex-row gap-3">
+                                   <button
+                                       onClick={saveTimersToFile}
+                                       className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 font-medium touch-target"
+                                   >
+                                       <Download size={18} />
+                                       Backup erstellen
+                                   </button>
+                                   <button
+                                       onClick={loadTimersFromFile}
+                                       className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-2 font-medium touch-target"
+                                   >
+                                       <Upload size={18} />
+                                       Backup laden
+                                   </button>
+                               </div>
+                               <p className="text-xs text-gray-500 mt-2 text-center">
+                                   Speichern Sie Ihre Timer-Daten als Datei, um sie zwischen Geräten zu übertragen oder vor Datenverlust zu schützen.
+                               </p>
+                           </div>
+                       )}
 
                        {/* Kompakte Übersicht */}
                        {timers.length > 0 && (
