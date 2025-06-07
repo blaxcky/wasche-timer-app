@@ -579,23 +579,23 @@
                        )}
 
                        {/* Drei-Punkte-Menü */}
-                       {timers.length > 0 && (
-                           <div className="fixed bottom-6 right-6">
-                               <div className="relative">
-                                   <button
-                                       onClick={() => setShowOptionsMenu(!showOptionsMenu)}
-                                       className="bg-gray-700 text-white p-3 rounded-full shadow-lg hover:bg-gray-800 transition-colors touch-target"
-                                   >
-                                       <MoreVertical size={20} />
-                                   </button>
-                                   
-                                   {showOptionsMenu && (
-                                       <>
-                                           <div 
-                                               className="fixed inset-0" 
-                                               onClick={() => setShowOptionsMenu(false)}
-                                           ></div>
-                                           <div className="absolute bottom-16 right-0 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-48 options-menu">
+                       <div className="fixed bottom-6 right-6">
+                           <div className="relative">
+                               <button
+                                   onClick={() => setShowOptionsMenu(!showOptionsMenu)}
+                                   className="bg-gray-700 text-white p-3 rounded-full shadow-lg hover:bg-gray-800 transition-colors touch-target"
+                               >
+                                   <MoreVertical size={20} />
+                               </button>
+                               
+                               {showOptionsMenu && (
+                                   <>
+                                       <div 
+                                           className="fixed inset-0" 
+                                           onClick={() => setShowOptionsMenu(false)}
+                                       ></div>
+                                       <div className="absolute bottom-16 right-0 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-48 options-menu">
+                                           {timers.length > 0 && (
                                                <button
                                                    onClick={() => {
                                                        saveTimersToFile();
@@ -606,22 +606,22 @@
                                                    <Download size={18} />
                                                    Backup erstellen
                                                </button>
-                                               <button
-                                                   onClick={() => {
-                                                       loadTimersFromFile();
-                                                       setShowOptionsMenu(false);
-                                                   }}
-                                                   className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700"
-                                               >
-                                                   <Upload size={18} />
-                                                   Backup laden
-                                               </button>
-                                           </div>
-                                       </>
-                                   )}
-                               </div>
+                                           )}
+                                           <button
+                                               onClick={() => {
+                                                   loadTimersFromFile();
+                                                   setShowOptionsMenu(false);
+                                               }}
+                                               className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700"
+                                           >
+                                               <Upload size={18} />
+                                               Backup laden
+                                           </button>
+                                       </div>
+                                   </>
+                               )}
                            </div>
-                       )}
+                       </div>
                    </div>
                </div>
            );
