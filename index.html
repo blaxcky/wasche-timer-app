@@ -131,8 +131,7 @@
                     if (storedTimers) {
                         return JSON.parse(storedTimers).map(timer => ({
                             ...timer,
-                            startTime: new Date(timer.startTime),
-                            completionTime: timer.completionTime ? new Date(timer.completionTime) : null
+                            startTime: new Date(timer.startTime)
                         }));
                     }
                 } catch (e) {
@@ -166,10 +165,7 @@
                     const newTimer = {
                         id: Date.now(),
                         name: newLoadName,
-                        startTime: new Date(),
-                        completedElapsedTime: null,
-                        isCompleted: false,
-                        completionTime: null
+                        startTime: new Date()
                     };
                     setTimers([...timers, newTimer]);
                     setNewLoadName('');
@@ -210,27 +206,6 @@
                 setEditDateTime('');
             };
 
-            const completeTimer = (id) => {
-                const timerToComplete = timers.find(t => t.id === id);
-                const confirmMessage = `Möchten Sie "${timerToComplete.name}" als fertig markieren?\n\nDer Timer wird gestoppt und als abgeschlossen markiert.`;
-
-                if (window.confirm(confirmMessage)) {
-                    setTimers(prevTimers =>
-                        prevTimers.map(timer => {
-                            if (timer.id === id) {
-                                const finalElapsedTime = Math.floor((currentTime.getTime() - timer.startTime.getTime()) / 1000);
-                                return {
-                                    ...timer,
-                                    isCompleted: true,
-                                    completedElapsedTime: finalElapsedTime,
-                                    completionTime: new Date()
-                                };
-                            }
-                            return timer;
-                        })
-                    );
-                }
-            };
 
             const deleteTimer = (id) => {
                 const timerToDelete = timers.find(t => t.id === id);
@@ -320,8 +295,7 @@
                     
                     const processedTimers = importedTimers.map(timer => ({
                         ...timer,
-                        startTime: new Date(timer.startTime),
-                        completionTime: timer.completionTime ? new Date(timer.completionTime) : null
+                        startTime: new Date(timer.startTime)
                     }));
                     
                     const confirmMessage = `${importedTimers.length} Timer gefunden.\n\nMöchten Sie diese importieren?\n\n⚠️ Achtung: Ihre aktuellen Timer werden ersetzt!`;
@@ -384,22 +358,10 @@
 
             const sortedTimers = timers
                 .slice()
-                .sort((a, b) => {
-                    if (a.isCompleted !== b.isCompleted) {
-                        return a.isCompleted ? 1 : -1;
-                    }
-                    if (a.isCompleted) {
-                        const timeA = a.completionTime ? a.completionTime.getTime() : 0;
-                        const timeB = b.completionTime ? b.completionTime.getTime() : 0;
-                        return timeA - timeB;
-                    }
-                    return a.startTime.getTime() - b.startTime.getTime();
-                });
+                .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 
             const renderCompactTimer = (timer) => {
-                const currentElapsedTime = timer.isCompleted
-                    ? timer.completedElapsedTime
-                    : Math.floor((currentTime.getTime() - timer.startTime.getTime()) / 1000);
+                const currentElapsedTime = Math.floor((currentTime.getTime() - timer.startTime.getTime()) / 1000);
 
                 const targetSeconds = 3 * 24 * 60 * 60;
                 const progressPercentage = Math.min((currentElapsedTime / targetSeconds) * 100, 100);
@@ -409,11 +371,7 @@
                     <div
                         key={timer.id}
                         className={`compact-timer-card bg-white rounded-lg shadow-md p-4 border-l-4 ${
-                            timer.isCompleted 
-                                ? 'border-gray-400 bg-gray-50' 
-                                : isTargetReached 
-                                    ? 'border-green-500' 
-                                    : 'border-blue-500'
+                            isTargetReached ? 'border-green-500' : 'border-blue-500'
                         }`}
                     >
                         <div className="flex items-center justify-between">
@@ -423,57 +381,36 @@
                                 </h3>
                                 <div className="flex items-center gap-2 mt-1">
                                     <span className={`text-sm font-mono font-bold ${
-                                        isTargetReached && !timer.isCompleted 
-                                            ? 'text-green-700' 
-                                            : timer.isCompleted 
-                                                ? 'text-gray-600' 
-                                                : 'text-blue-600'
+                                        isTargetReached ? 'text-green-700' : 'text-blue-600'
                                     }`}>
                                         {formatTime(currentElapsedTime)}
                                     </span>
-                                    {timer.isCompleted && (
-                                        <CheckCircle className="text-green-600" size={16} />
-                                    )}
-                                    {isTargetReached && !timer.isCompleted && (
+                                    {isTargetReached && (
                                         <span className="text-green-600 text-xs font-bold">✓ 3T</span>
                                     )}
                                 </div>
-                                {!timer.isCompleted && (
-                                    <div className="mt-2">
-                                        <div className="w-full bg-gray-200 rounded-full h-2">
-                                            <div
-                                                className={`h-2 rounded-full transition-all duration-1000 ${
-                                                    isTargetReached ? 'bg-green-500' : 'bg-blue-500'
-                                                }`}
-                                                style={{ width: `${progressPercentage}%` }}
-                                            />
-                                        </div>
-                                        <div className="text-xs text-gray-500 mt-1">
-                                            {Math.round(progressPercentage)}% - {
-                                                isTargetReached 
-                                                    ? 'Ziel erreicht!' 
-                                                    : `Noch ${formatTime(Math.max(0, targetSeconds - currentElapsedTime), false)}`
-                                            }
-                                        </div>
+                                <div className="mt-2">
+                                    <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div
+                                            className={`h-2 rounded-full transition-all duration-1000 ${
+                                                isTargetReached ? 'bg-green-500' : 'bg-blue-500'
+                                            }`}
+                                            style={{ width: `${progressPercentage}%` }}
+                                        />
                                     </div>
-                                )}
+                                    <div className="text-xs text-gray-500 mt-1">
+                                        {Math.round(progressPercentage)}% - {
+                                            isTargetReached 
+                                                ? 'Ziel erreicht!' 
+                                                : `Noch ${formatTime(Math.max(0, targetSeconds - currentElapsedTime), false)}`
+                                        }
+                                    </div>
+                                </div>
                                 <div className="text-xs text-gray-500 mt-1">
-                                    {timer.isCompleted 
-                                        ? `Fertig: ${timer.completionTime.toLocaleDateString('de-DE')}`
-                                        : `Seit: ${timer.startTime.toLocaleDateString('de-DE')}`
-                                    }
+                                    Seit: {timer.startTime.toLocaleDateString('de-DE')}
                                 </div>
                             </div>
                             <div className="flex flex-col gap-1 ml-2">
-                                {!timer.isCompleted && (
-                                    <button
-                                        onClick={() => completeTimer(timer.id)}
-                                        className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors touch-target"
-                                        title="Als fertig markieren"
-                                    >
-                                        <CheckCircle size={18} />
-                                    </button>
-                                )}
                                 <button
                                     onClick={() => deleteTimer(timer.id)}
                                     className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors touch-target"
@@ -577,31 +514,18 @@
                                <div className="flex justify-between items-center text-center">
                                    <div className="flex-1">
                                        <div className="text-lg font-bold text-blue-600">
-                                           {timers.filter(t => !t.isCompleted).length}
+                                           {timers.length}
                                        </div>
                                        <div className="text-xs text-gray-600">Aktiv</div>
                                    </div>
                                    <div className="flex-1">
                                        <div className="text-lg font-bold text-green-600">
-                                           {timers.filter(t => t.isCompleted).length}
-                                       </div>
-                                       <div className="text-xs text-gray-600">Fertig</div>
-                                   </div>
-                                   <div className="flex-1">
-                                       <div className="text-lg font-bold text-yellow-600">
                                            {timers.filter(t => {
-                                               if (t.isCompleted) return false;
                                                const elapsed = Math.floor((currentTime.getTime() - t.startTime.getTime()) / 1000);
                                                return elapsed >= (3 * 24 * 60 * 60);
                                            }).length}
                                        </div>
                                        <div className="text-xs text-gray-600">Ziel erreicht</div>
-                                   </div>
-                                   <div className="flex-1">
-                                       <div className="text-lg font-bold text-gray-600">
-                                           {timers.length}
-                                       </div>
-                                       <div className="text-xs text-gray-600">Gesamt</div>
                                    </div>
                                </div>
                            </div>
