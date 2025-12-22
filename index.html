@@ -382,10 +382,40 @@
             const [showDatePicker, setShowDatePicker] = useState(false);
             const [currentTime, setCurrentTime] = useState(new Date());
             const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+            const [washingMachineEndTime, setWashingMachineEndTime] = useState(() => {
+                const stored = localStorage.getItem('washingMachineEndTime');
+                return stored ? new Date(stored) : null;
+            });
 
             useEffect(() => {
                 localStorage.setItem('laundryTimers', JSON.stringify(timers));
             }, [timers]);
+
+            useEffect(() => {
+                if (washingMachineEndTime) {
+                    localStorage.setItem('washingMachineEndTime', washingMachineEndTime.toISOString());
+                } else {
+                    localStorage.removeItem('washingMachineEndTime');
+                }
+            }, [washingMachineEndTime]);
+
+            const startWashingMachine = () => {
+                const endTime = new Date(Date.now() + (2 * 60 + 50) * 60 * 1000);
+                setWashingMachineEndTime(endTime);
+            };
+
+            const stopWashingMachine = () => {
+                setWashingMachineEndTime(null);
+            };
+
+            const getWashingMachineRemaining = () => {
+                if (!washingMachineEndTime) return null;
+                const remaining = Math.max(0, Math.floor((washingMachineEndTime.getTime() - currentTime.getTime()) / 1000));
+                return remaining;
+            };
+
+            const washingRemaining = getWashingMachineRemaining();
+            const isWashingDone = washingRemaining === 0 && washingMachineEndTime;
 
 
             useEffect(() => {
@@ -783,6 +813,51 @@
                            </div>
                        </div>
 
+                       {/* Waschmaschinen-Timer */}
+                       {washingMachineEndTime ? (
+                           <div className={`mb-4 p-4 rounded-xl shadow-lg ${isWashingDone ? 'bg-green-500 animate-pulse' : 'bg-gradient-to-r from-purple-500 to-indigo-600'}`}>
+                               <div className="flex items-center justify-between text-white">
+                                   <div className="flex items-center gap-3">
+                                       <div className="text-3xl">🧺</div>
+                                       <div>
+                                           <div className="text-sm opacity-80">Waschmaschine</div>
+                                           <div className="text-2xl font-bold font-mono">
+                                               {isWashingDone ? 'Fertig!' : formatTime(washingRemaining)}
+                                           </div>
+                                       </div>
+                                   </div>
+                                   <button
+                                       onClick={stopWashingMachine}
+                                       className="px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg text-sm font-medium transition-colors"
+                                   >
+                                       {isWashingDone ? 'OK' : 'Stopp'}
+                                   </button>
+                               </div>
+                               {!isWashingDone && (
+                                   <div className="mt-3">
+                                       <div className="w-full bg-white bg-opacity-20 rounded-full h-2">
+                                           <div
+                                               className="h-2 rounded-full bg-white transition-all duration-1000"
+                                               style={{ width: `${Math.max(0, 100 - (washingRemaining / (170 * 60)) * 100)}%` }}
+                                           />
+                                       </div>
+                                       <div className="text-xs text-white text-opacity-70 mt-1">
+                                           Fertig um {washingMachineEndTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+                                       </div>
+                                   </div>
+                               )}
+                           </div>
+                       ) : (
+                           <div className="mb-4 flex justify-end">
+                               <button
+                                   onClick={startWashingMachine}
+                                   className="text-gray-400 hover:text-purple-600 text-sm flex items-center gap-1 px-3 py-1 rounded-lg hover:bg-purple-50 transition-colors"
+                               >
+                                   <span>🧺</span>
+                                   <span>2:50</span>
+                               </button>
+                           </div>
+                       )}
 
                        {/* Neue Wäscheladung hinzufügen */}
                        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6">
