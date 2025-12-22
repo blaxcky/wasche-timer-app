@@ -386,6 +386,8 @@
                 const stored = localStorage.getItem('washingMachineEndTime');
                 return stored ? new Date(stored) : null;
             });
+            const [showWashingTimeSelect, setShowWashingTimeSelect] = useState(false);
+            const [customWashingMinutes, setCustomWashingMinutes] = useState(170);
 
             useEffect(() => {
                 localStorage.setItem('laundryTimers', JSON.stringify(timers));
@@ -399,9 +401,10 @@
                 }
             }, [washingMachineEndTime]);
 
-            const startWashingMachine = () => {
-                const endTime = new Date(Date.now() + (2 * 60 + 50) * 60 * 1000);
+            const startWashingMachine = (minutes = 170) => {
+                const endTime = new Date(Date.now() + minutes * 60 * 1000);
                 setWashingMachineEndTime(endTime);
+                setShowWashingTimeSelect(false);
             };
 
             const stopWashingMachine = () => {
@@ -848,14 +851,54 @@
                                )}
                            </div>
                        ) : (
-                           <div className="mb-4 flex justify-end">
-                               <button
-                                   onClick={startWashingMachine}
-                                   className="text-gray-400 hover:text-purple-600 text-sm flex items-center gap-1 px-3 py-1 rounded-lg hover:bg-purple-50 transition-colors"
-                               >
-                                   <span>🧺</span>
-                                   <span>2:50</span>
-                               </button>
+                           <div className="mb-4 flex justify-end relative">
+                               <div className="flex items-center">
+                                   <button
+                                       onClick={() => startWashingMachine(170)}
+                                       className="text-gray-400 hover:text-purple-600 text-sm flex items-center gap-1 px-3 py-1 rounded-l-lg hover:bg-purple-50 transition-colors"
+                                   >
+                                       <span>🧺</span>
+                                       <span>2:50</span>
+                                   </button>
+                                   <button
+                                       onClick={() => setShowWashingTimeSelect(!showWashingTimeSelect)}
+                                       className="text-gray-400 hover:text-purple-600 text-sm px-1 py-1 rounded-r-lg hover:bg-purple-50 transition-colors border-l border-gray-200"
+                                   >
+                                       ▼
+                                   </button>
+                               </div>
+                               {showWashingTimeSelect && (
+                                   <>
+                                       <div className="fixed inset-0" onClick={() => setShowWashingTimeSelect(false)} />
+                                       <div className="absolute top-8 right-0 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-40 z-50">
+                                           <button onClick={() => startWashingMachine(60)} className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm">1:00</button>
+                                           <button onClick={() => startWashingMachine(90)} className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm">1:30</button>
+                                           <button onClick={() => startWashingMachine(120)} className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm">2:00</button>
+                                           <button onClick={() => startWashingMachine(170)} className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm font-medium">2:50 (Standard)</button>
+                                           <button onClick={() => startWashingMachine(180)} className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm">3:00</button>
+                                           <div className="border-t border-gray-200 mt-1 pt-1 px-2">
+                                               <div className="flex items-center gap-2 py-1">
+                                                   <input
+                                                       type="number"
+                                                       min="1"
+                                                       max="300"
+                                                       value={customWashingMinutes}
+                                                       onChange={(e) => setCustomWashingMinutes(parseInt(e.target.value) || 0)}
+                                                       className="w-16 px-2 py-1 border rounded text-sm"
+                                                       placeholder="Min"
+                                                   />
+                                                   <span className="text-xs text-gray-500">Min</span>
+                                                   <button
+                                                       onClick={() => startWashingMachine(customWashingMinutes)}
+                                                       className="px-2 py-1 bg-purple-600 text-white rounded text-xs"
+                                                   >
+                                                       Start
+                                                   </button>
+                                               </div>
+                                           </div>
+                                       </div>
+                                   </>
+                               )}
                            </div>
                        )}
 
