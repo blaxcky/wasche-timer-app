@@ -145,17 +145,18 @@
         const ScrollPicker = ({ values, selected, onChange, format }) => {
             const containerRef = React.useRef(null);
             const itemHeight = 40;
+            const selectedIndex = values.indexOf(selected);
 
             useEffect(() => {
                 if (containerRef.current) {
-                    containerRef.current.scrollTop = selected * itemHeight;
+                    containerRef.current.scrollTop = selectedIndex * itemHeight;
                 }
             }, []);
 
             const handleScroll = (e) => {
                 const scrollTop = e.target.scrollTop;
                 const index = Math.round(scrollTop / itemHeight);
-                if (index !== selected && index >= 0 && index < values.length) {
+                if (index >= 0 && index < values.length && values[index] !== selected) {
                     onChange(values[index]);
                 }
             };
@@ -164,7 +165,7 @@
                 <div
                     ref={containerRef}
                     onScroll={handleScroll}
-                    className="h-32 overflow-y-auto snap-y snap-mandatory scrollbar-hide"
+                    className="h-32 overflow-y-auto snap-y snap-mandatory scrollbar-hide relative z-10"
                     style={{ scrollSnapType: 'y mandatory' }}
                 >
                     <div style={{ height: itemHeight }} />
@@ -177,8 +178,8 @@
                                     containerRef.current.scrollTo({ top: idx * itemHeight, behavior: 'smooth' });
                                 }
                             }}
-                            className={`h-10 flex items-center justify-center text-xl cursor-pointer snap-center ${
-                                val === selected ? 'text-blue-600 font-bold' : 'text-gray-400'
+                            className={`h-10 flex items-center justify-center text-xl cursor-pointer snap-center transition-colors ${
+                                val === selected ? 'text-blue-700 font-bold text-2xl' : 'text-gray-300'
                             }`}
                             style={{ scrollSnapAlign: 'center' }}
                         >
