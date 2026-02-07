@@ -391,11 +391,7 @@ function AppContent(): JSX.Element {
     <div className="app-root">
       <div className="ambient-bg" aria-hidden="true" />
       <header className="top-bar">
-        <div>
-          <p className="eyebrow">Android PWA</p>
-          <h1>Wäsche-Timer</h1>
-        </div>
-        <span className="status-pill">v2 Overhaul</span>
+        <h1>Wäsche-Timer</h1>
       </header>
 
       <main className="main-pane">
@@ -572,7 +568,7 @@ function AppContent(): JSX.Element {
               <div className="section-head">
                 <h3>Backup</h3>
               </div>
-              <div className="quick-actions">
+              <div className="quick-actions backup-actions">
                 <button className="btn btn-tonal" onClick={exportBackup}>Backup exportieren</button>
                 <button className="btn btn-tonal" onClick={importBackup}>Backup importieren</button>
               </div>

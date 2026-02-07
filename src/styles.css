@@ -100,15 +100,6 @@ button:focus-visible {
   color: var(--muted);
 }
 
-.status-pill {
-  padding: 0.26rem 0.52rem;
-  border-radius: 999px;
-  font-weight: 700;
-  font-size: 0.66rem;
-  background: #d7ecf5;
-  color: var(--primary-strong);
-}
-
 .main-pane {
   display: block;
 }
@@ -224,6 +215,15 @@ button:focus-visible {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.backup-actions {
+  flex-wrap: nowrap;
+}
+
+.backup-actions .btn {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .maintenance-actions {
