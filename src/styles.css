@@ -570,22 +570,6 @@ button:focus-visible {
   width: 100%;
 }
 
-.fab {
-  position: fixed;
-  right: max(16px, env(safe-area-inset-right));
-  bottom: calc(84px + env(safe-area-inset-bottom));
-  border: none;
-  border-radius: 18px;
-  width: 56px;
-  height: 56px;
-  font-size: 1.8rem;
-  line-height: 1;
-  color: var(--on-primary);
-  background: linear-gradient(160deg, #0d5f7f, #1b8bb3);
-  box-shadow: var(--shadow-2);
-  cursor: pointer;
-}
-
 @keyframes rise-in {
   from {
     transform: translateY(10px);
