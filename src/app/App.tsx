@@ -499,7 +499,7 @@ function AppContent(): JSX.Element {
               </div>
             </article>
 
-            <article className="card">
+            <article className="card machine-card">
               <div className="section-head">
                 <h3>Waschmaschine</h3>
                 {state.washingMachine.active ? (
@@ -509,8 +509,10 @@ function AppContent(): JSX.Element {
 
               {state.washingMachine.active && washingEndDate ? (
                 <>
-                  <p className="big-timer">{isWashingDone ? "Fertig" : formatDuration(washingRemaining)}</p>
-                  <p className="muted">Ende: {washingEndDate.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr</p>
+                  <p className="big-timer machine-big-timer">{isWashingDone ? "Fertig" : formatDuration(washingRemaining)}</p>
+                  <p className="muted machine-end-time">
+                    Ende: {washingEndDate.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr
+                  </p>
                   <div className="progress-track">
                     <div className="progress-bar" style={{ width: `${washingProgress}%` }} />
                   </div>
@@ -519,7 +521,7 @@ function AppContent(): JSX.Element {
                 <p className="muted">Kein Waschmaschinen-Timer aktiv.</p>
               )}
 
-              <div className="washing-presets">
+              <div className="washing-presets machine-presets">
                 {state.settings.defaultWashingPresetsMin.map((value) => (
                   <button
                     key={value}
@@ -531,28 +533,30 @@ function AppContent(): JSX.Element {
                 ))}
               </div>
 
-              <div className="machine-custom-grid">
-                <label className="machine-time-field">
-                  <span>Stunden</span>
+              <div className="machine-inline-controls">
+                <label className="machine-inline-field">
                   <input
                     type="number"
                     min={0}
                     max={23}
                     value={machineHours}
                     onChange={(event) => setMachineHours(event.target.value)}
+                    aria-label="Stunden"
                   />
+                  <span>h</span>
                 </label>
-                <label className="machine-time-field">
-                  <span>Minuten</span>
+                <label className="machine-inline-field">
                   <input
                     type="number"
                     min={0}
                     max={59}
                     value={machineInputMinutes}
                     onChange={(event) => setMachineInputMinutes(event.target.value)}
+                    aria-label="Minuten"
                   />
+                  <span>m</span>
                 </label>
-                <button className="btn btn-primary" onClick={startCustomWashingMachine}>Start</button>
+                <button className="btn btn-primary machine-start-btn" onClick={startCustomWashingMachine}>Start</button>
               </div>
             </article>
 
