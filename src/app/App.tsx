@@ -647,10 +647,10 @@ function AppContent(): JSX.Element {
                 <h3>Timer-Übersicht</h3>
               </div>
               <div className="dashboard-overview-grid">
-                <section className="overview-panel" aria-label="Laufende Timer">
-                  <div className="overview-panel-head">
+                <section className="overview-panel overview-panel-running" aria-label="Laufende Timer">
+                  <div className="overview-panel-head overview-panel-head-running">
                     <h4>Laufend</h4>
-                    <span className="overview-count">{runningTimerItems.length}</span>
+                    <span className="overview-count overview-count-running">{runningTimerItems.length}</span>
                   </div>
                   {runningTimerItems.length === 0 ? (
                     <p className="muted compact-empty">Keine laufenden Timer.</p>
@@ -666,10 +666,10 @@ function AppContent(): JSX.Element {
                   )}
                 </section>
 
-                <section className="overview-panel" aria-label="Fertige Timer">
-                  <div className="overview-panel-head">
+                <section className="overview-panel overview-panel-done" aria-label="Fertige Timer">
+                  <div className="overview-panel-head overview-panel-head-done">
                     <h4>Fertig</h4>
-                    <span className="overview-count">{finishedTimerItems.length}</span>
+                    <span className="overview-count overview-count-done">{finishedTimerItems.length}</span>
                   </div>
                   {finishedTimerItems.length === 0 ? (
                     <p className="muted compact-empty">Noch nichts fertig.</p>
