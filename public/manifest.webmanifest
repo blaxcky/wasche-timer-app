@@ -1,6 +1,6 @@
 {
-  "name": "Wasche Timer",
-  "short_name": "WascheTimer",
+  "name": "Wäsche-Timer",
+  "short_name": "WäscheTimer",
   "description": "Tracke Trocknungszeit und Waschmaschinenlaufzeiten auf Android.",
   "start_url": "./",
   "scope": "./",
@@ -27,3 +27,4 @@
     }
   ]
 }
+

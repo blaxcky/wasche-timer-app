@@ -5,21 +5,21 @@ export const DEFAULT_TARGET_DURATION_SEC = 3 * 24 * 60 * 60;
 export const DEFAULT_TEMPLATES: LaundryTemplate[] = [
   {
     id: "tpl-colored",
-    name: "Buntwaesche",
+    name: "Buntwäsche",
     emoji: "🌈",
     targetDurationSec: DEFAULT_TARGET_DURATION_SEC,
     reminderOffsetsMin: [1440, 360, 60]
   },
   {
     id: "tpl-towels",
-    name: "Handtuecher",
+    name: "Handtücher",
     emoji: "🧺",
     targetDurationSec: DEFAULT_TARGET_DURATION_SEC,
     reminderOffsetsMin: [1440, 480, 90]
   },
   {
     id: "tpl-bedding",
-    name: "Bettwaesche",
+    name: "Bettwäsche",
     emoji: "🛏️",
     targetDurationSec: DEFAULT_TARGET_DURATION_SEC,
     reminderOffsetsMin: [1440, 360, 120]
@@ -50,3 +50,4 @@ export function createDefaultState(nowIso: string): AppStateV2 {
     updatedAt: nowIso
   };
 }
+

@@ -15,8 +15,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["icons/icon-192.svg", "icons/icon-512.svg", "icons/maskable-512.svg"],
       manifest: {
-        name: "Wasche Timer",
-        short_name: "WascheTimer",
+        name: "Wäsche-Timer",
+        short_name: "WäscheTimer",
         description: "Tracke Trocknungszeit und Waschmaschinenlaufzeiten auf Android.",
         start_url: "./",
         scope: "./",
@@ -69,3 +69,4 @@ export default defineConfig({
     })
   ]
 });
+

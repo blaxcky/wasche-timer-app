@@ -39,7 +39,7 @@ describe("storage migrations", () => {
       JSON.stringify([
         {
           id: 1,
-          name: "Handtuecher",
+          name: "Handtücher",
           startTime: "2026-02-01T08:00:00.000Z"
         }
       ])
@@ -48,7 +48,7 @@ describe("storage migrations", () => {
     const migrated = migrateLegacyStorage(storage, "2026-02-07T12:00:00.000Z");
     expect(migrated).not.toBeNull();
     expect(migrated?.timers).toHaveLength(1);
-    expect(migrated?.timers[0].name).toBe("Handtuecher");
+    expect(migrated?.timers[0].name).toBe("Handtücher");
     expect(migrated?.schemaVersion).toBe(2);
   });
 
@@ -85,3 +85,4 @@ describe("storage migrations", () => {
     expect(loaded.settings.defaultWashingPresetsMin).toEqual([60, 90, 120]);
   });
 });
+

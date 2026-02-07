@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Wasche Timer is now a mobile-first Android-styled PWA built with Vite + React + TypeScript.
+Wäsche-Timer is now a mobile-first Android-styled PWA built with Vite + React + TypeScript.
 It tracks laundry drying progress, washing machine runtime, reminders, templates, and history.
 
 ## Architecture
@@ -47,3 +47,4 @@ It tracks laundry drying progress, washing machine runtime, reminders, templates
 - Storage layer: `src/shared/storage/repository.ts`
 - Migration logic: `src/shared/storage/migrations.ts`
 - Theme/styles: `src/styles.css`
+

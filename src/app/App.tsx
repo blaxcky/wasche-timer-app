@@ -167,13 +167,13 @@ function AppContent(): JSX.Element {
 
       if (dueOffset === undefined) continue;
 
-      maybeNotify("Wasche Timer", `${timer.name}: noch ${formatDuration(dueOffset * 60, false)} bis Ziel.`);
+      maybeNotify("Wäsche-Timer", `${timer.name}: noch ${formatDuration(dueOffset * 60, false)} bis Ziel.`);
       triggerHaptics(state.settings.hapticsEnabled);
       dispatch({ type: "MARK_REMINDER_SENT", payload: { id: timer.id, offsetMin: dueOffset } });
     }
 
     if (isWashingDone && !washingDoneRef.current) {
-      maybeNotify("Waschmaschine fertig", "Dein Waschgang ist fertig und bereit zum Aufhaengen.");
+      maybeNotify("Waschmaschine fertig", "Dein Waschgang ist fertig und bereit zum Aufhängen.");
       triggerHaptics(state.settings.hapticsEnabled);
       washingDoneRef.current = true;
     }
@@ -225,7 +225,7 @@ function AppContent(): JSX.Element {
     try {
       startAtIso = fromDatetimeLocalInput(editDraft.startAtInput);
     } catch {
-      window.alert("Bitte ein gueltiges Startdatum eingeben.");
+      window.alert("Bitte ein gültiges Startdatum eingeben.");
       return;
     }
 
@@ -252,7 +252,7 @@ function AppContent(): JSX.Element {
   };
 
   const deleteTimer = (id: string): void => {
-    if (!confirmAction("Timer wirklich loeschen?")) return;
+    if (!confirmAction("Timer wirklich löschen?")) return;
     dispatch({ type: "DELETE_TIMER", payload: { id, archiveReason: "deleted" } });
   };
 
@@ -288,10 +288,10 @@ function AppContent(): JSX.Element {
     try {
       if (window.showSaveFilePicker) {
         const fileHandle = await window.showSaveFilePicker({
-          suggestedName: `wasche-timer-backup-${new Date().toISOString().slice(0, 10)}.json`,
+          suggestedName: `wäsche-timer-backup-${new Date().toISOString().slice(0, 10)}.json`,
           types: [
             {
-              description: "Wasche Timer Backup",
+              description: "Wäsche-Timer Backup",
               accept: { "application/json": [".json"] }
             }
           ]
@@ -305,7 +305,7 @@ function AppContent(): JSX.Element {
         const url = URL.createObjectURL(blob);
         const anchor = document.createElement("a");
         anchor.href = url;
-        anchor.download = `wasche-timer-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        anchor.download = `wäsche-timer-backup-${new Date().toISOString().slice(0, 10)}.json`;
         anchor.click();
         URL.revokeObjectURL(url);
       }
@@ -321,7 +321,7 @@ function AppContent(): JSX.Element {
         .showOpenFilePicker({
           types: [
             {
-              description: "Wasche Timer Backup",
+              description: "Wäsche-Timer Backup",
               accept: { "application/json": [".json"] }
             }
           ]
@@ -354,12 +354,12 @@ function AppContent(): JSX.Element {
 
       const raw = await file.text();
       const importedState = parseBackupPayload(raw);
-      if (!confirmAction(`Import ${importedState.timers.length} Timer und ${importedState.history.length} Archiv-Eintraege?`)) return;
+      if (!confirmAction(`Import ${importedState.timers.length} Timer und ${importedState.history.length} Archiv-Einträge?`)) return;
 
       dispatch({ type: "REPLACE_STATE", payload: importedState });
       window.alert("Backup erfolgreich importiert.");
     } catch {
-      window.alert("Backup-Datei ist ungueltig oder nicht lesbar.");
+      window.alert("Backup-Datei ist ungültig oder nicht lesbar.");
     }
   };
 
@@ -386,7 +386,7 @@ function AppContent(): JSX.Element {
     const presets = parseMinutesInput(defaultPresetInput).sort((a, b) => a - b);
 
     if (reminders.length === 0 || presets.length === 0) {
-      window.alert("Bitte gueltige Minutenlisten eingeben.");
+      window.alert("Bitte gültige Minutenlisten eingeben.");
       return;
     }
 
@@ -414,7 +414,7 @@ function AppContent(): JSX.Element {
       <header className="top-bar">
         <div>
           <p className="eyebrow">Android PWA</p>
-          <h1>Wasche Timer</h1>
+          <h1>Wäsche-Timer</h1>
         </div>
         <span className="status-pill">v2 Overhaul</span>
       </header>
@@ -424,7 +424,7 @@ function AppContent(): JSX.Element {
           <section className="tab-screen">
             <div className="card hero-card">
               <div>
-                <p className="eyebrow">Schnellueberblick</p>
+                <p className="eyebrow">Schnellüberblick</p>
                 <h2>{activeCount} aktiv, {doneCount} fertig</h2>
               </div>
               <p className="muted">Durchschnittliche Laufzeit: {formatDuration(avgElapsed, false)}</p>
@@ -517,12 +517,12 @@ function AppContent(): JSX.Element {
           <section className="tab-screen">
             <article className="card">
               <div className="section-head">
-                <h3>Neue Waescheladung</h3>
+                <h3>Neue Wäscheladung</h3>
               </div>
               <div className="stacked-form">
                 <input
                   type="text"
-                  placeholder="z.B. Buntwaesche, Handtuecher, Bettwaesche"
+                  placeholder="z.B. Buntwäsche, Handtücher, Bettwäsche"
                   value={newTimerName}
                   onChange={(event) => setNewTimerName(event.target.value)}
                   onKeyDown={(event) => {
@@ -586,7 +586,7 @@ function AppContent(): JSX.Element {
                           <button className="btn btn-tonal" onClick={() => markDone(timer.id)}>Als fertig</button>
                         ) : null}
                         <button className="btn btn-tonal" onClick={() => archiveTimer(timer.id)}>Archivieren</button>
-                        <button className="btn btn-danger" onClick={() => deleteTimer(timer.id)}>Loeschen</button>
+                        <button className="btn btn-danger" onClick={() => deleteTimer(timer.id)}>Löschen</button>
                       </div>
                     </article>
                   );
@@ -624,7 +624,7 @@ function AppContent(): JSX.Element {
               </label>
 
               <label className="switch-row">
-                <span>Bestaetigungsdialoge</span>
+                <span>Bestätigungsdialoge</span>
                 <input
                   type="checkbox"
                   checked={state.settings.confirmationsEnabled}
@@ -692,10 +692,10 @@ function AppContent(): JSX.Element {
               </div>
               <p className="muted">
                 {isStandalone
-                  ? "App laeuft bereits im Standalone-Modus."
+                  ? "App läuft bereits im Standalone-Modus."
                   : installPrompt
                   ? "App kann jetzt auf dem Homescreen installiert werden."
-                  : "Install-Prompt aktuell nicht verfuegbar. Auf Android ueber Browser-Menue installierbar."}
+                  : "Install-Prompt aktuell nicht verfügbar. Auf Android über Browser-Menü installierbar."}
               </p>
               {installPrompt ? (
                 <button className="btn btn-primary" onClick={installApp}>Jetzt installieren</button>
@@ -772,3 +772,4 @@ export default function App(): JSX.Element {
     </AppStateProvider>
   );
 }
+

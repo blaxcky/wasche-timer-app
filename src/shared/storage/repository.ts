@@ -222,7 +222,7 @@ export function parseBackupPayload(raw: string): AppStateV2 {
   }
 
   if (!parsed || typeof parsed !== "object") {
-    throw new Error("Ungueltiges Backup-Format");
+    throw new Error("Ungültiges Backup-Format");
   }
 
   const record = parsed as Partial<ExportedBackupV2>;
@@ -232,3 +232,4 @@ export function parseBackupPayload(raw: string): AppStateV2 {
 
   return sanitizeState(record.data);
 }
+
