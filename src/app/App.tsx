@@ -122,8 +122,37 @@ function AppContent(): JSX.Element {
     [state.timers]
   );
 
-  const activeCount = state.timers.filter((timer) => timer.status === "active").length;
-  const doneCount = state.timers.filter((timer) => elapsedSeconds(timer.startAt, now) >= timer.targetDurationSec).length;
+  const timerOverview = useMemo(
+    () =>
+      sortedTimers.map((timer) => {
+        const elapsed = elapsedSeconds(timer.startAt, now);
+        const remaining = Math.max(0, timer.targetDurationSec - elapsed);
+        const reached = elapsed >= timer.targetDurationSec;
+        const overdue = Math.max(0, elapsed - timer.targetDurationSec);
+
+        return {
+          timer,
+          elapsed,
+          remaining,
+          reached,
+          overdue
+        };
+      }),
+    [sortedTimers, now]
+  );
+
+  const runningTimerItems = useMemo(
+    () => timerOverview.filter((item) => !item.reached).sort((a, b) => a.remaining - b.remaining),
+    [timerOverview]
+  );
+
+  const finishedTimerItems = useMemo(
+    () => timerOverview.filter((item) => item.reached).sort((a, b) => a.overdue - b.overdue),
+    [timerOverview]
+  );
+
+  const activeCount = runningTimerItems.length;
+  const doneCount = finishedTimerItems.length;
   const templateCount = state.templates.length;
 
   const washingRemaining = useMemo(() => {
@@ -422,6 +451,53 @@ function AppContent(): JSX.Element {
                 <strong>{templateCount}</strong>
               </article>
             </div>
+
+            <article className="card">
+              <div className="section-head">
+                <h3>Timer-Übersicht</h3>
+              </div>
+              <div className="dashboard-overview-grid">
+                <section className="overview-panel" aria-label="Laufende Timer">
+                  <div className="overview-panel-head">
+                    <h4>Laufend</h4>
+                    <span className="overview-count">{runningTimerItems.length}</span>
+                  </div>
+                  {runningTimerItems.length === 0 ? (
+                    <p className="muted compact-empty">Keine laufenden Timer.</p>
+                  ) : (
+                    <ul className="dashboard-overview-list">
+                      {runningTimerItems.slice(0, 4).map(({ timer, remaining }) => (
+                        <li key={`running-${timer.id}`}>
+                          <span className="overview-name">{timer.name}</span>
+                          <span className="overview-meta">Noch {formatDuration(remaining, false)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+
+                <section className="overview-panel" aria-label="Fertige Timer">
+                  <div className="overview-panel-head">
+                    <h4>Fertig</h4>
+                    <span className="overview-count">{finishedTimerItems.length}</span>
+                  </div>
+                  {finishedTimerItems.length === 0 ? (
+                    <p className="muted compact-empty">Noch nichts fertig.</p>
+                  ) : (
+                    <ul className="dashboard-overview-list">
+                      {finishedTimerItems.slice(0, 4).map(({ timer, overdue }) => (
+                        <li key={`finished-${timer.id}`}>
+                          <span className="overview-name">{timer.name}</span>
+                          <span className="overview-meta">
+                            {overdue < 60 ? "Gerade fertig" : `Fertig seit ${formatDuration(overdue, false)}`}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              </div>
+            </article>
 
             <article className="card">
               <div className="section-head">

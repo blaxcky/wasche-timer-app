@@ -151,6 +151,80 @@ button:focus-visible {
   gap: 0.65rem;
 }
 
+.dashboard-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.overview-panel {
+  display: grid;
+  gap: 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.62rem 0.68rem;
+  background: #f9fcff;
+}
+
+.overview-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.overview-panel-head h4 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.overview-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 24px;
+  border-radius: 999px;
+  background: #d7ecf5;
+  color: var(--primary-strong);
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 0 0.45rem;
+}
+
+.dashboard-overview-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.42rem;
+}
+
+.dashboard-overview-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.overview-name {
+  font-weight: 600;
+  font-size: 0.86rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.overview-meta {
+  color: var(--muted);
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+.compact-empty {
+  font-size: 0.82rem;
+}
+
 .kpi-card {
   text-align: center;
 }
@@ -598,6 +672,10 @@ button:focus-visible {
 
 @media (max-width: 560px) {
   .inline-form {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-overview-grid {
     grid-template-columns: 1fr;
   }
 
