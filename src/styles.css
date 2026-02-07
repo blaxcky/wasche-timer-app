@@ -147,7 +147,7 @@ button:focus-visible {
 
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.65rem;
 }
 
@@ -288,6 +288,11 @@ button:focus-visible {
   height: 8px;
 }
 
+.machine-lock-hint {
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+}
+
 .inline-form {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -368,6 +373,14 @@ button:focus-visible {
   padding-bottom: 0.35rem;
 }
 
+.template-row-centered {
+  justify-content: center;
+}
+
+.template-row-scrollable {
+  justify-content: flex-start;
+}
+
 .chip {
   border: 1px solid var(--line);
   background: #f8fbff;
@@ -439,6 +452,15 @@ button:focus-visible {
   font-size: 0.81rem;
 }
 
+.preset-chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.preset-chip-active:disabled {
+  opacity: 1;
+}
+
 .preset-chip-active {
   border-color: var(--primary);
   background: #d7ecf5;
@@ -505,10 +527,24 @@ button:focus-visible {
   font-weight: 700;
 }
 
+.machine-inline-field-disabled {
+  background: #f1f5f9;
+}
+
+.machine-inline-field input:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
 .machine-start-btn {
   min-height: 40px;
   margin-left: auto;
   white-space: nowrap;
+}
+
+.machine-start-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .timer-list {

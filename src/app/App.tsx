@@ -99,6 +99,8 @@ function AppContent(): JSX.Element {
   const [newPresetMinutes, setNewPresetMinutes] = useState("50");
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const washingDoneRef = useRef(false);
+  const templateRowRef = useRef<HTMLDivElement | null>(null);
+  const [templateRowScrollable, setTemplateRowScrollable] = useState(false);
 
   useEffect(() => {
     if (state.washingMachine.active) return;
@@ -116,6 +118,27 @@ function AppContent(): JSX.Element {
     window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
     return () => window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
   }, []);
+
+  useEffect(() => {
+    if (tab !== "timers") return;
+    const node = templateRowRef.current;
+    if (!node) return;
+
+    const updateScrollable = (): void => {
+      setTemplateRowScrollable(node.scrollWidth - node.clientWidth > 4);
+    };
+
+    updateScrollable();
+
+    const observer = "ResizeObserver" in window ? new ResizeObserver(updateScrollable) : null;
+    observer?.observe(node);
+    window.addEventListener("resize", updateScrollable);
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", updateScrollable);
+    };
+  }, [state.templates.length, tab]);
 
   const sortedTimers = useMemo(
     () => [...state.timers].sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()),
@@ -153,7 +176,6 @@ function AppContent(): JSX.Element {
 
   const activeCount = runningTimerItems.length;
   const doneCount = finishedTimerItems.length;
-  const templateCount = state.templates.length;
 
   const washingRemaining = useMemo(() => {
     if (!state.washingMachine.active || !state.washingMachine.endAt) return 0;
@@ -238,6 +260,7 @@ function AppContent(): JSX.Element {
   };
 
   const startWashingMachine = (minutes: number): void => {
+    if (state.washingMachine.active) return;
     if (!Number.isFinite(minutes) || minutes <= 0) return;
     dispatch({ type: "START_WASHING_MACHINE", payload: { minutes: Math.floor(minutes) } });
     triggerHaptics(state.settings.hapticsEnabled);
@@ -446,11 +469,81 @@ function AppContent(): JSX.Element {
                 <p>Ziel erreicht</p>
                 <strong>{doneCount}</strong>
               </article>
-              <article className="card kpi-card">
-                <p>Vorlagen</p>
-                <strong>{templateCount}</strong>
-              </article>
             </div>
+
+            <article className="card machine-card">
+              <div className="section-head">
+                <h3>Waschmaschine</h3>
+                {state.washingMachine.active ? (
+                  <button className="btn btn-text" onClick={stopWashingMachine}>Stopp</button>
+                ) : null}
+              </div>
+
+              {state.washingMachine.active && washingEndDate ? (
+                <>
+                  <p className="big-timer machine-big-timer">{isWashingDone ? "Fertig" : formatDuration(washingRemaining)}</p>
+                  <p className="muted machine-end-time">
+                    Ende: {washingEndDate.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr
+                  </p>
+                  <div className="progress-track">
+                    <div className="progress-bar" style={{ width: `${washingProgress}%` }} />
+                  </div>
+                </>
+              ) : (
+                <p className="muted">Kein Waschmaschinen-Timer aktiv.</p>
+              )}
+
+              {state.washingMachine.active ? (
+                <p className="muted machine-lock-hint">Neuen Waschmaschinen-Timer erst nach Stopp starten.</p>
+              ) : null}
+
+              <div className="washing-presets machine-presets">
+                {state.settings.defaultWashingPresetsMin.map((value) => (
+                  <button
+                    key={value}
+                    className={`preset-chip ${state.washingMachine.active && value === state.washingMachine.presetMin ? "preset-chip-active" : ""}`}
+                    onClick={() => startWashingMachine(value)}
+                    disabled={state.washingMachine.active}
+                  >
+                    {formatPresetLabel(value)}
+                  </button>
+                ))}
+              </div>
+
+              <div className="machine-inline-controls">
+                <label className={`machine-inline-field ${state.washingMachine.active ? "machine-inline-field-disabled" : ""}`}>
+                  <input
+                    type="number"
+                    min={0}
+                    max={23}
+                    value={machineHours}
+                    onChange={(event) => setMachineHours(event.target.value)}
+                    aria-label="Stunden"
+                    disabled={state.washingMachine.active}
+                  />
+                  <span>h</span>
+                </label>
+                <label className={`machine-inline-field ${state.washingMachine.active ? "machine-inline-field-disabled" : ""}`}>
+                  <input
+                    type="number"
+                    min={0}
+                    max={59}
+                    value={machineInputMinutes}
+                    onChange={(event) => setMachineInputMinutes(event.target.value)}
+                    aria-label="Minuten"
+                    disabled={state.washingMachine.active}
+                  />
+                  <span>m</span>
+                </label>
+                <button
+                  className="btn btn-primary machine-start-btn"
+                  onClick={startCustomWashingMachine}
+                  disabled={state.washingMachine.active}
+                >
+                  Start
+                </button>
+              </div>
+            </article>
 
             <article className="card">
               <div className="section-head">
@@ -499,67 +592,6 @@ function AppContent(): JSX.Element {
               </div>
             </article>
 
-            <article className="card machine-card">
-              <div className="section-head">
-                <h3>Waschmaschine</h3>
-                {state.washingMachine.active ? (
-                  <button className="btn btn-text" onClick={stopWashingMachine}>Stopp</button>
-                ) : null}
-              </div>
-
-              {state.washingMachine.active && washingEndDate ? (
-                <>
-                  <p className="big-timer machine-big-timer">{isWashingDone ? "Fertig" : formatDuration(washingRemaining)}</p>
-                  <p className="muted machine-end-time">
-                    Ende: {washingEndDate.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr
-                  </p>
-                  <div className="progress-track">
-                    <div className="progress-bar" style={{ width: `${washingProgress}%` }} />
-                  </div>
-                </>
-              ) : (
-                <p className="muted">Kein Waschmaschinen-Timer aktiv.</p>
-              )}
-
-              <div className="washing-presets machine-presets">
-                {state.settings.defaultWashingPresetsMin.map((value) => (
-                  <button
-                    key={value}
-                    className={`preset-chip ${state.washingMachine.active && value === state.washingMachine.presetMin ? "preset-chip-active" : ""}`}
-                    onClick={() => startWashingMachine(value)}
-                  >
-                    {formatPresetLabel(value)}
-                  </button>
-                ))}
-              </div>
-
-              <div className="machine-inline-controls">
-                <label className="machine-inline-field">
-                  <input
-                    type="number"
-                    min={0}
-                    max={23}
-                    value={machineHours}
-                    onChange={(event) => setMachineHours(event.target.value)}
-                    aria-label="Stunden"
-                  />
-                  <span>h</span>
-                </label>
-                <label className="machine-inline-field">
-                  <input
-                    type="number"
-                    min={0}
-                    max={59}
-                    value={machineInputMinutes}
-                    onChange={(event) => setMachineInputMinutes(event.target.value)}
-                    aria-label="Minuten"
-                  />
-                  <span>m</span>
-                </label>
-                <button className="btn btn-primary machine-start-btn" onClick={startCustomWashingMachine}>Start</button>
-              </div>
-            </article>
-
           </section>
         )}
 
@@ -579,7 +611,10 @@ function AppContent(): JSX.Element {
                     if (event.key === "Enter") addTimer();
                   }}
                 />
-                <div className="template-row">
+                <div
+                  ref={templateRowRef}
+                  className={`template-row ${templateRowScrollable ? "template-row-scrollable" : "template-row-centered"}`}
+                >
                   {state.templates.map((template) => (
                     <button
                       key={template.id}
