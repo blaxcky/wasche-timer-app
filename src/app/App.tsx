@@ -370,7 +370,7 @@ function AppContent(): JSX.Element {
                 <h2>{activeCount} aktiv, {doneCount} fertig</h2>
               </div>
               <p className="muted">Durchschnittliche Laufzeit: {formatDuration(avgElapsed, false)}</p>
-              <div className="quick-actions">
+              <div className="quick-actions hero-actions">
                 <button className="btn btn-tonal" onClick={() => setTab("timers")}>Timer verwalten</button>
                 <button className="btn btn-tonal" onClick={() => addTimer("Neue Ladung")}>Schnellstart</button>
               </div>
@@ -641,7 +641,7 @@ function AppContent(): JSX.Element {
                 value={editDraft.startAtInput}
                 onChange={(event) => setEditDraft({ ...editDraft, startAtInput: event.target.value })}
               />
-              <div className="quick-actions">
+              <div className="quick-actions dialog-actions">
                 <button className="btn btn-tonal" onClick={() => setEditDraft(null)}>Abbrechen</button>
                 <button className="btn btn-primary" onClick={saveEditor}>Speichern</button>
               </div>
