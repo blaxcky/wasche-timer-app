@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AppStateProvider, useAppState } from "./state";
 import { buildBackupPayload, parseBackupPayload } from "../shared/storage/repository";
 import { createId } from "../shared/lib/id";
+import { resetAppRuntimeCaches } from "../shared/lib/pwa-reset";
 import { elapsedSeconds, formatDateTime, formatDuration, fromDatetimeLocalInput, toDatetimeLocalInput } from "../shared/lib/time";
 import { TabId, LaundryTemplate, LaundryTimer } from "../shared/types/models";
 
@@ -396,6 +397,24 @@ function AppContent(): JSX.Element {
     setInstallPrompt(null);
   };
 
+  const resetRuntimeAndReload = async (): Promise<void> => {
+    const firstConfirm = window.confirm(
+      "App-Cache und Service Worker werden zurückgesetzt.\n\nTimer und Einstellungen bleiben erhalten.\n\nJetzt fortfahren?"
+    );
+    if (!firstConfirm) return;
+
+    const secondConfirm = window.confirm(
+      "Letzte Bestätigung:\nDie App wird direkt neu geladen, damit die aktuelle Version erzwungen wird."
+    );
+    if (!secondConfirm) return;
+
+    await resetAppRuntimeCaches();
+
+    const reloadUrl = new URL(window.location.href);
+    reloadUrl.searchParams.set("refresh", Date.now().toString());
+    window.location.replace(reloadUrl.toString());
+  };
+
   const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
 
   return (
@@ -660,6 +679,18 @@ function AppContent(): JSX.Element {
               {installPrompt ? (
                 <button className="btn btn-primary" onClick={installApp}>Jetzt installieren</button>
               ) : null}
+            </article>
+
+            <article className="card">
+              <div className="section-head">
+                <h3>Wartung</h3>
+              </div>
+              <p className="muted">Setzt Service Worker und Browser-Cache zurück, ohne deine Timer-Daten zu löschen.</p>
+              <div className="quick-actions">
+                <button className="btn btn-tonal" onClick={resetRuntimeAndReload}>
+                  App neu laden (Cache zurücksetzen)
+                </button>
+              </div>
             </article>
           </section>
         )}
