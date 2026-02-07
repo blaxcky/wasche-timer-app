@@ -12,7 +12,6 @@ export interface LaundryTemplate {
   name: string;
   emoji: string;
   targetDurationSec: number;
-  reminderOffsetsMin: number[];
 }
 
 export interface LaundryTimer {
@@ -20,9 +19,6 @@ export interface LaundryTimer {
   name: string;
   startAt: string;
   targetDurationSec: number;
-  reminderEnabled: boolean;
-  reminderOffsetsMin: number[];
-  notifiedOffsetsMin: number[];
   status: TimerStatus;
 }
 
@@ -43,7 +39,6 @@ export interface AppSettings {
   locale: "de-DE";
   hapticsEnabled: boolean;
   confirmationsEnabled: boolean;
-  defaultReminderOffsetsMin: number[];
   defaultWashingPresetsMin: number[];
 }
 

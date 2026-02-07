@@ -57,23 +57,6 @@ function AndroidIcon({ icon }: { icon: string }): JSX.Element {
   }
 }
 
-function requestPermission(): Promise<NotificationPermission> {
-  if (!("Notification" in window)) return Promise.resolve("denied");
-  if (Notification.permission !== "default") return Promise.resolve(Notification.permission);
-  return Notification.requestPermission();
-}
-
-function maybeNotify(title: string, body: string): void {
-  if (!("Notification" in window)) return;
-  if (Notification.permission !== "granted") return;
-
-  try {
-    new Notification(title, { body });
-  } catch {
-    // Ignore browser-specific notification failures.
-  }
-}
-
 function triggerHaptics(enabled: boolean): void {
   if (!enabled) return;
   if (!("vibrate" in navigator)) return;
@@ -84,8 +67,6 @@ interface EditDraft {
   id: string;
   name: string;
   startAtInput: string;
-  reminderEnabled: boolean;
-  reminderOffsetsInput: string;
 }
 
 function AppContent(): JSX.Element {
@@ -98,18 +79,9 @@ function AppContent(): JSX.Element {
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
   const [newTemplateName, setNewTemplateName] = useState("");
   const [newTemplateEmoji, setNewTemplateEmoji] = useState("🧺");
-  const [newTemplateReminders, setNewTemplateReminders] = useState("1440,360,60");
-  const [defaultReminderInput, setDefaultReminderInput] = useState(state.settings.defaultReminderOffsetsMin.join(","));
   const [defaultPresetInput, setDefaultPresetInput] = useState(state.settings.defaultWashingPresetsMin.join(","));
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
-    "Notification" in window ? Notification.permission : "denied"
-  );
   const washingDoneRef = useRef(false);
-
-  useEffect(() => {
-    setDefaultReminderInput(state.settings.defaultReminderOffsetsMin.join(","));
-  }, [state.settings.defaultReminderOffsetsMin]);
 
   useEffect(() => {
     setDefaultPresetInput(state.settings.defaultWashingPresetsMin.join(","));
@@ -138,7 +110,7 @@ function AppContent(): JSX.Element {
 
   const activeCount = state.timers.filter((timer) => timer.status === "active").length;
   const doneCount = state.timers.filter((timer) => elapsedSeconds(timer.startAt, now) >= timer.targetDurationSec).length;
-  const reminderCount = state.timers.filter((timer) => timer.reminderEnabled).length;
+  const templateCount = state.templates.length;
   const avgElapsed =
     state.timers.length === 0
       ? 0
@@ -155,24 +127,7 @@ function AppContent(): JSX.Element {
   const isWashingDone = state.washingMachine.active && washingEndDate !== null && now.getTime() >= washingEndDate.getTime();
 
   useEffect(() => {
-    for (const timer of state.timers) {
-      if (!timer.reminderEnabled || timer.status !== "active") continue;
-
-      const targetTimeMs = new Date(timer.startAt).getTime() + timer.targetDurationSec * 1000;
-      const dueOffset = timer.reminderOffsetsMin
-        .filter((offset) => !timer.notifiedOffsetsMin.includes(offset))
-        .sort((a, b) => a - b)
-        .find((offset) => now.getTime() >= targetTimeMs - offset * 60 * 1000);
-
-      if (dueOffset === undefined) continue;
-
-      maybeNotify("Wäsche-Timer", `${timer.name}: noch ${formatDuration(dueOffset * 60, false)} bis Ziel.`);
-      triggerHaptics(state.settings.hapticsEnabled);
-      dispatch({ type: "MARK_REMINDER_SENT", payload: { id: timer.id, offsetMin: dueOffset } });
-    }
-
     if (isWashingDone && !washingDoneRef.current) {
-      maybeNotify("Waschmaschine fertig", "Dein Waschgang ist fertig und bereit zum Aufhängen.");
       triggerHaptics(state.settings.hapticsEnabled);
       washingDoneRef.current = true;
     }
@@ -180,7 +135,7 @@ function AppContent(): JSX.Element {
     if (!isWashingDone) {
       washingDoneRef.current = false;
     }
-  }, [dispatch, isWashingDone, now, state.settings.hapticsEnabled, state.timers]);
+  }, [isWashingDone, state.settings.hapticsEnabled]);
 
   const confirmAction = (text: string): boolean => {
     if (!state.settings.confirmationsEnabled) return true;
@@ -209,16 +164,12 @@ function AppContent(): JSX.Element {
     setEditDraft({
       id: timer.id,
       name: timer.name,
-      startAtInput: toDatetimeLocalInput(timer.startAt),
-      reminderEnabled: timer.reminderEnabled,
-      reminderOffsetsInput: timer.reminderOffsetsMin.join(",")
+      startAtInput: toDatetimeLocalInput(timer.startAt)
     });
   };
 
   const saveEditor = (): void => {
     if (!editDraft) return;
-
-    const offsets = parseMinutesInput(editDraft.reminderOffsetsInput);
     let startAtIso: string;
 
     try {
@@ -234,15 +185,6 @@ function AppContent(): JSX.Element {
         id: editDraft.id,
         name: editDraft.name,
         startAt: startAtIso
-      }
-    });
-
-    dispatch({
-      type: "SET_TIMER_REMINDERS",
-      payload: {
-        id: editDraft.id,
-        enabled: editDraft.reminderEnabled,
-        offsets: offsets.length > 0 ? offsets : state.settings.defaultReminderOffsetsMin
       }
     });
 
@@ -265,11 +207,6 @@ function AppContent(): JSX.Element {
   const stopWashingMachine = (): void => {
     if (!confirmAction("Waschmaschinen-Timer stoppen?")) return;
     dispatch({ type: "STOP_WASHING_MACHINE" });
-  };
-
-  const askNotificationPermission = async (): Promise<void> => {
-    const permission = await requestPermission();
-    setNotificationPermission(permission);
   };
 
   const exportBackup = async (): Promise<void> => {
@@ -355,9 +292,8 @@ function AppContent(): JSX.Element {
   };
 
   const addTemplate = (): void => {
-    const reminders = parseMinutesInput(newTemplateReminders);
-    if (newTemplateName.trim().length === 0 || reminders.length === 0) {
-      window.alert("Vorlage braucht Namen und mindestens einen Reminder-Wert.");
+    if (newTemplateName.trim().length === 0) {
+      window.alert("Vorlage braucht einen Namen.");
       return;
     }
 
@@ -365,26 +301,23 @@ function AppContent(): JSX.Element {
       type: "ADD_TEMPLATE",
       payload: {
         name: newTemplateName,
-        emoji: newTemplateEmoji,
-        reminders
+        emoji: newTemplateEmoji
       }
     });
     setNewTemplateName("");
   };
 
   const applyDefaults = (): void => {
-    const reminders = parseMinutesInput(defaultReminderInput);
     const presets = parseMinutesInput(defaultPresetInput).sort((a, b) => a - b);
 
-    if (reminders.length === 0 || presets.length === 0) {
-      window.alert("Bitte gültige Minutenlisten eingeben.");
+    if (presets.length === 0) {
+      window.alert("Bitte gültige Minutenliste eingeben.");
       return;
     }
 
     dispatch({
       type: "UPDATE_SETTINGS",
       payload: {
-        defaultReminderOffsetsMin: reminders,
         defaultWashingPresetsMin: presets
       }
     });
@@ -453,8 +386,8 @@ function AppContent(): JSX.Element {
                 <strong>{doneCount}</strong>
               </article>
               <article className="card kpi-card">
-                <p>Mit Reminder</p>
-                <strong>{reminderCount}</strong>
+                <p>Vorlagen</p>
+                <strong>{templateCount}</strong>
               </article>
             </div>
 
@@ -559,7 +492,7 @@ function AppContent(): JSX.Element {
                       </div>
 
                       <div className="timer-meta">
-                        <span>Reminder: {timer.reminderEnabled ? timer.reminderOffsetsMin.join(",") + " Min" : "Aus"}</span>
+                        <span>Ziel: 3 Tage</span>
                         <span>{progress}%</span>
                       </div>
 
@@ -589,7 +522,7 @@ function AppContent(): JSX.Element {
 
             <article className="card">
               <div className="section-head">
-                <h3>Reminder und Haptik</h3>
+                <h3>App-Einstellungen</h3>
               </div>
               <label className="switch-row">
                 <span>Haptisches Feedback</span>
@@ -616,24 +549,12 @@ function AppContent(): JSX.Element {
               <div className="inline-form">
                 <input
                   type="text"
-                  value={defaultReminderInput}
-                  onChange={(event) => setDefaultReminderInput(event.target.value)}
-                  placeholder="1440,360,60"
-                />
-                <input
-                  type="text"
                   value={defaultPresetInput}
                   onChange={(event) => setDefaultPresetInput(event.target.value)}
                   placeholder="60,90,120,170"
                 />
                 <button className="btn btn-primary" onClick={applyDefaults}>Defaults setzen</button>
               </div>
-
-              <div className="section-head compact">
-                <h4>Benachrichtigungen</h4>
-                <span className="muted">Status: {notificationPermission}</span>
-              </div>
-              <button className="btn btn-tonal" onClick={askNotificationPermission}>Berechtigung anfragen</button>
             </article>
 
             <article className="card">
@@ -654,13 +575,7 @@ function AppContent(): JSX.Element {
                   placeholder="Name"
                 />
               </div>
-              <div className="inline-form">
-                <input
-                  type="text"
-                  value={newTemplateReminders}
-                  onChange={(event) => setNewTemplateReminders(event.target.value)}
-                  placeholder="Reminder in Min, z.B. 1440,360,60"
-                />
+              <div className="quick-actions">
                 <button className="btn btn-primary" onClick={addTemplate}>Vorlage speichern</button>
               </div>
             </article>
@@ -725,20 +640,6 @@ function AppContent(): JSX.Element {
                 type="datetime-local"
                 value={editDraft.startAtInput}
                 onChange={(event) => setEditDraft({ ...editDraft, startAtInput: event.target.value })}
-              />
-              <label className="switch-row">
-                <span>Reminder aktiv</span>
-                <input
-                  type="checkbox"
-                  checked={editDraft.reminderEnabled}
-                  onChange={(event) => setEditDraft({ ...editDraft, reminderEnabled: event.target.checked })}
-                />
-              </label>
-              <input
-                type="text"
-                value={editDraft.reminderOffsetsInput}
-                onChange={(event) => setEditDraft({ ...editDraft, reminderOffsetsInput: event.target.value })}
-                placeholder="Reminder-Minuten, z.B. 1440,360,60"
               />
               <div className="quick-actions">
                 <button className="btn btn-tonal" onClick={() => setEditDraft(null)}>Abbrechen</button>

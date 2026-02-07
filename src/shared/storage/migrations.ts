@@ -1,4 +1,4 @@
-import { createDefaultState, DEFAULT_SETTINGS, DEFAULT_TARGET_DURATION_SEC, DEFAULT_TEMPLATES } from "../lib/defaults";
+import { createDefaultState, DEFAULT_TARGET_DURATION_SEC, DEFAULT_TEMPLATES } from "../lib/defaults";
 import { createId } from "../lib/id";
 import {
   AppStateV2,
@@ -46,9 +46,6 @@ export function migrateLegacyStorage(storage: Storage, nowIso = new Date().toISO
     name: timer.name,
     startAt: new Date(timer.startTime).toISOString(),
     targetDurationSec: DEFAULT_TARGET_DURATION_SEC,
-    reminderEnabled: true,
-    reminderOffsetsMin: DEFAULT_SETTINGS.defaultReminderOffsetsMin,
-    notifiedOffsetsMin: [],
     status: "active"
   }));
 

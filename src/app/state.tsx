@@ -9,15 +9,13 @@ type Action =
   | { type: "UPDATE_TIMER"; payload: { id: string; name: string; startAt: string } }
   | { type: "DELETE_TIMER"; payload: { id: string; archiveReason?: HistoryEntry["reason"] } }
   | { type: "SET_TIMER_STATUS"; payload: { id: string; status: LaundryTimer["status"] } }
-  | { type: "SET_TIMER_REMINDERS"; payload: { id: string; enabled: boolean; offsets: number[] } }
-  | { type: "MARK_REMINDER_SENT"; payload: { id: string; offsetMin: number } }
   | { type: "START_WASHING_MACHINE"; payload: { minutes: number } }
   | { type: "STOP_WASHING_MACHINE" }
   | { type: "UPDATE_SETTINGS"; payload: Partial<AppStateV2["settings"]> }
   | { type: "REPLACE_STATE"; payload: AppStateV2 }
   | { type: "ARCHIVE_TIMER"; payload: { id: string; reason: HistoryEntry["reason"] } }
   | { type: "RESTORE_HISTORY"; payload: { historyId: string } }
-  | { type: "ADD_TEMPLATE"; payload: { name: string; emoji: string; reminders: number[]; targetDurationSec?: number } };
+  | { type: "ADD_TEMPLATE"; payload: { name: string; emoji: string; targetDurationSec?: number } };
 
 function reducer(state: AppStateV2, action: Action): AppStateV2 {
   switch (action.type) {
@@ -32,9 +30,6 @@ function reducer(state: AppStateV2, action: Action): AppStateV2 {
         name: trimmed,
         startAt: new Date().toISOString(),
         targetDurationSec: template?.targetDurationSec ?? DEFAULT_TARGET_DURATION_SEC,
-        reminderEnabled: true,
-        reminderOffsetsMin: template?.reminderOffsetsMin ?? state.settings.defaultReminderOffsetsMin,
-        notifiedOffsetsMin: [],
         status: "active"
       };
 
@@ -50,8 +45,7 @@ function reducer(state: AppStateV2, action: Action): AppStateV2 {
           return {
             ...timer,
             name: name.trim() || timer.name,
-            startAt: new Date(startAt).toISOString(),
-            notifiedOffsetsMin: []
+            startAt: new Date(startAt).toISOString()
           };
         })
       };
@@ -109,41 +103,6 @@ function reducer(state: AppStateV2, action: Action): AppStateV2 {
       };
     }
 
-    case "SET_TIMER_REMINDERS": {
-      const offsets = action.payload.offsets
-        .map((value) => Math.floor(value))
-        .filter((value) => Number.isFinite(value) && value > 0)
-        .sort((a, b) => b - a);
-
-      return {
-        ...state,
-        timers: state.timers.map((timer) => {
-          if (timer.id !== action.payload.id) return timer;
-
-          return {
-            ...timer,
-            reminderEnabled: action.payload.enabled,
-            reminderOffsetsMin: offsets.length > 0 ? Array.from(new Set(offsets)) : timer.reminderOffsetsMin
-          };
-        })
-      };
-    }
-
-    case "MARK_REMINDER_SENT": {
-      return {
-        ...state,
-        timers: state.timers.map((timer) => {
-          if (timer.id !== action.payload.id) return timer;
-          if (timer.notifiedOffsetsMin.includes(action.payload.offsetMin)) return timer;
-
-          return {
-            ...timer,
-            notifiedOffsetsMin: [...timer.notifiedOffsetsMin, action.payload.offsetMin]
-          };
-        })
-      };
-    }
-
     case "START_WASHING_MACHINE": {
       const mins = Math.max(1, Math.floor(action.payload.minutes));
       const endAt = new Date(Date.now() + mins * 60 * 1000).toISOString();
@@ -179,13 +138,6 @@ function reducer(state: AppStateV2, action: Action): AppStateV2 {
         ...state,
         settings: {
           ...merged,
-          defaultReminderOffsetsMin: Array.from(
-            new Set(
-              merged.defaultReminderOffsetsMin
-                .map((value) => Math.floor(value))
-                .filter((value) => value > 0)
-            )
-          ).sort((a, b) => b - a),
           defaultWashingPresetsMin: Array.from(
             new Set(
               merged.defaultWashingPresetsMin
@@ -208,8 +160,7 @@ function reducer(state: AppStateV2, action: Action): AppStateV2 {
       const restored: LaundryTimer = {
         ...entry.timerSnapshot,
         id: createId("timer"),
-        status: "active",
-        notifiedOffsetsMin: []
+        status: "active"
       };
 
       return {
@@ -223,21 +174,11 @@ function reducer(state: AppStateV2, action: Action): AppStateV2 {
       const trimmed = action.payload.name.trim();
       if (!trimmed) return state;
 
-      const reminders = action.payload.reminders
-        .map((value) => Math.floor(value))
-        .filter((value) => value > 0)
-        .sort((a, b) => b - a);
-
-      if (reminders.length === 0) {
-        return state;
-      }
-
       const template: LaundryTemplate = {
         id: createId("tpl"),
         name: trimmed,
         emoji: action.payload.emoji || "🧺",
-        targetDurationSec: action.payload.targetDurationSec ?? DEFAULT_TARGET_DURATION_SEC,
-        reminderOffsetsMin: reminders
+        targetDurationSec: action.payload.targetDurationSec ?? DEFAULT_TARGET_DURATION_SEC
       };
 
       return {

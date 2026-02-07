@@ -7,22 +7,19 @@ export const DEFAULT_TEMPLATES: LaundryTemplate[] = [
     id: "tpl-colored",
     name: "Buntwäsche",
     emoji: "🌈",
-    targetDurationSec: DEFAULT_TARGET_DURATION_SEC,
-    reminderOffsetsMin: [1440, 360, 60]
+    targetDurationSec: DEFAULT_TARGET_DURATION_SEC
   },
   {
     id: "tpl-towels",
     name: "Handtücher",
     emoji: "🧺",
-    targetDurationSec: DEFAULT_TARGET_DURATION_SEC,
-    reminderOffsetsMin: [1440, 480, 90]
+    targetDurationSec: DEFAULT_TARGET_DURATION_SEC
   },
   {
     id: "tpl-bedding",
     name: "Bettwäsche",
     emoji: "🛏️",
-    targetDurationSec: DEFAULT_TARGET_DURATION_SEC,
-    reminderOffsetsMin: [1440, 360, 120]
+    targetDurationSec: DEFAULT_TARGET_DURATION_SEC
   }
 ];
 
@@ -30,7 +27,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   locale: "de-DE",
   hapticsEnabled: true,
   confirmationsEnabled: true,
-  defaultReminderOffsetsMin: [1440, 360, 60],
   defaultWashingPresetsMin: [60, 90, 120, 170, 180]
 };
 

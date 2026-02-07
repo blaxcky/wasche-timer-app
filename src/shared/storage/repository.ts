@@ -12,17 +12,6 @@ import {
   TimerStatus
 } from "../types/models";
 
-function sanitizeOffsets(offsets: unknown, fallback: number[]): number[] {
-  if (!Array.isArray(offsets)) return fallback;
-
-  const cleaned = offsets
-    .map((value) => Number(value))
-    .filter((value) => Number.isFinite(value) && value > 0)
-    .map((value) => Math.floor(value));
-
-  return cleaned.length > 0 ? Array.from(new Set(cleaned)).sort((a, b) => b - a) : fallback;
-}
-
 function sanitizePresetMinutes(offsets: unknown, fallback: number[]): number[] {
   if (!Array.isArray(offsets)) return fallback;
 
@@ -38,7 +27,7 @@ function sanitizeStatus(status: unknown): TimerStatus {
   return status === "done" ? "done" : "active";
 }
 
-function sanitizeTimer(input: unknown, fallbackOffsets: number[]): LaundryTimer | null {
+function sanitizeTimer(input: unknown): LaundryTimer | null {
   if (!input || typeof input !== "object") return null;
 
   const item = input as Partial<LaundryTimer>;
@@ -54,9 +43,6 @@ function sanitizeTimer(input: unknown, fallbackOffsets: number[]): LaundryTimer 
     name: item.name.trim() || "Unbenannt",
     startAt: startAt.toISOString(),
     targetDurationSec: Number.isFinite(targetDurationSec) && targetDurationSec > 0 ? Math.floor(targetDurationSec) : 259200,
-    reminderEnabled: item.reminderEnabled !== false,
-    reminderOffsetsMin: sanitizeOffsets(item.reminderOffsetsMin, fallbackOffsets),
-    notifiedOffsetsMin: sanitizeOffsets(item.notifiedOffsetsMin, []),
     status: sanitizeStatus(item.status)
   };
 }
@@ -72,19 +58,18 @@ function sanitizeTemplate(input: unknown): LaundryTemplate | null {
     id: typeof item.id === "string" ? item.id : createId("tpl"),
     name: item.name.trim() || "Vorlage",
     emoji: typeof item.emoji === "string" ? item.emoji : "🧺",
-    targetDurationSec: Number.isFinite(targetDurationSec) && targetDurationSec > 0 ? Math.floor(targetDurationSec) : 259200,
-    reminderOffsetsMin: sanitizeOffsets(item.reminderOffsetsMin, DEFAULT_SETTINGS.defaultReminderOffsetsMin)
+    targetDurationSec: Number.isFinite(targetDurationSec) && targetDurationSec > 0 ? Math.floor(targetDurationSec) : 259200
   };
 }
 
-function sanitizeHistory(input: unknown, fallbackOffsets: number[]): HistoryEntry[] {
+function sanitizeHistory(input: unknown): HistoryEntry[] {
   if (!Array.isArray(input)) return [];
 
   return input
     .map((entry) => {
       if (!entry || typeof entry !== "object") return null;
       const candidate = entry as Partial<HistoryEntry>;
-      const timerSnapshot = sanitizeTimer(candidate.timerSnapshot, fallbackOffsets);
+      const timerSnapshot = sanitizeTimer(candidate.timerSnapshot);
       if (!timerSnapshot) return null;
       const archivedAt = new Date(candidate.archivedAt ?? "");
       if (Number.isNaN(archivedAt.getTime())) return null;
@@ -106,20 +91,19 @@ export function sanitizeState(input: unknown): AppStateV2 {
   if (!input || typeof input !== "object") return fallback;
 
   const data = input as Partial<AppStateV2>;
-  const defaultOffsets = sanitizeOffsets(data.settings?.defaultReminderOffsetsMin, DEFAULT_SETTINGS.defaultReminderOffsetsMin);
 
   const templates = Array.isArray(data.templates)
     ? data.templates.map((item) => sanitizeTemplate(item)).filter((item): item is LaundryTemplate => Boolean(item))
     : [];
 
   const timers = Array.isArray(data.timers)
-    ? data.timers.map((item) => sanitizeTimer(item, defaultOffsets)).filter((item): item is LaundryTimer => Boolean(item))
+    ? data.timers.map((item) => sanitizeTimer(item)).filter((item): item is LaundryTimer => Boolean(item))
     : [];
 
   const state: AppStateV2 = {
     schemaVersion: APP_SCHEMA_VERSION,
     timers,
-    history: sanitizeHistory(data.history, defaultOffsets),
+    history: sanitizeHistory(data.history),
     templates: templates.length > 0 ? templates : DEFAULT_TEMPLATES,
     washingMachine: {
       active: data.washingMachine?.active === true,
@@ -132,7 +116,6 @@ export function sanitizeState(input: unknown): AppStateV2 {
       locale: "de-DE",
       hapticsEnabled: data.settings?.hapticsEnabled !== false,
       confirmationsEnabled: data.settings?.confirmationsEnabled !== false,
-      defaultReminderOffsetsMin: defaultOffsets,
       defaultWashingPresetsMin: sanitizePresetMinutes(
         data.settings?.defaultWashingPresetsMin,
         DEFAULT_SETTINGS.defaultWashingPresetsMin
@@ -209,9 +192,6 @@ export function parseBackupPayload(raw: string): AppStateV2 {
         name: item.name,
         startAt: parsedDate.toISOString(),
         targetDurationSec: 259200,
-        reminderEnabled: true,
-        reminderOffsetsMin: DEFAULT_SETTINGS.defaultReminderOffsetsMin,
-        notifiedOffsetsMin: [],
         status: "active"
       });
     }

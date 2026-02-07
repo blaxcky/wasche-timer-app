@@ -72,7 +72,6 @@ describe("storage migrations", () => {
         locale: "de-DE",
         hapticsEnabled: true,
         confirmationsEnabled: true,
-        defaultReminderOffsetsMin: [1440, 360, 60],
         defaultWashingPresetsMin: [60, 90, 120]
       },
       installedAt: "2026-02-01T00:00:00.000Z",
