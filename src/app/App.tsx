@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppStateProvider, useAppState } from "./state";
 import { buildBackupPayload, parseBackupPayload } from "../shared/storage/repository";
-import { createId } from "../shared/lib/id";
 import { resetAppRuntimeCaches } from "../shared/lib/pwa-reset";
 import { elapsedSeconds, formatDateTime, formatDuration, fromDatetimeLocalInput, toDatetimeLocalInput } from "../shared/lib/time";
 import { TabId, LaundryTemplate, LaundryTimer } from "../shared/types/models";
@@ -756,9 +755,6 @@ function AppContent(): JSX.Element {
         </div>
       ) : null}
 
-      <button className="fab" onClick={() => addTimer(newTimerName || `Ladung ${createId("n").slice(-4)}`)}>
-        +
-      </button>
     </div>
   );
 }
