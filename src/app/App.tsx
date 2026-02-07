@@ -12,13 +12,29 @@ const NAV_ITEMS: Array<{ id: TabId; label: string; icon: string }> = [
   { id: "settings", label: "Einstellungen", icon: "settings" }
 ];
 
-function parseMinutesInput(input: string): number[] {
-  return input
-    .split(",")
-    .map((token) => Number(token.trim()))
-    .filter((value) => Number.isFinite(value) && value > 0)
-    .map((value) => Math.floor(value))
-    .sort((a, b) => b - a);
+function formatPresetLabel(totalMinutes: number): string {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours}h ${minutes.toString().padStart(2, "0")}m`;
+}
+
+function splitPresetMinutes(totalMinutes: number): { hours: number; minutes: number } {
+  return {
+    hours: Math.floor(totalMinutes / 60),
+    minutes: totalMinutes % 60
+  };
+}
+
+function parseHourMinutePreset(hoursInput: string, minutesInput: string): number | null {
+  const hours = Number(hoursInput);
+  const minutes = Number(minutesInput);
+
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return null;
+  if (hours < 0 || hours > 23) return null;
+  if (minutes < 0 || minutes > 59) return null;
+
+  const total = hours * 60 + minutes;
+  return total > 0 ? total : null;
 }
 
 function useNow(): Date {
@@ -72,19 +88,25 @@ interface EditDraft {
 function AppContent(): JSX.Element {
   const { state, dispatch } = useAppState();
   const now = useNow();
+  const initialMachinePreset = splitPresetMinutes(state.washingMachine.presetMin);
   const [tab, setTab] = useState<TabId>("dashboard");
   const [newTimerName, setNewTimerName] = useState("");
-  const [machineMinutes, setMachineMinutes] = useState(state.washingMachine.presetMin.toString());
+  const [machineHours, setMachineHours] = useState(initialMachinePreset.hours.toString());
+  const [machineInputMinutes, setMachineInputMinutes] = useState(initialMachinePreset.minutes.toString());
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
   const [newTemplateName, setNewTemplateName] = useState("");
   const [newTemplateEmoji, setNewTemplateEmoji] = useState("🧺");
-  const [defaultPresetInput, setDefaultPresetInput] = useState(state.settings.defaultWashingPresetsMin.join(","));
+  const [newPresetHours, setNewPresetHours] = useState("2");
+  const [newPresetMinutes, setNewPresetMinutes] = useState("50");
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const washingDoneRef = useRef(false);
 
   useEffect(() => {
-    setDefaultPresetInput(state.settings.defaultWashingPresetsMin.join(","));
-  }, [state.settings.defaultWashingPresetsMin]);
+    if (state.washingMachine.active) return;
+    const preset = splitPresetMinutes(state.washingMachine.presetMin);
+    setMachineHours(preset.hours.toString());
+    setMachineInputMinutes(preset.minutes.toString());
+  }, [state.washingMachine.active, state.washingMachine.presetMin]);
 
   useEffect(() => {
     const onBeforeInstallPrompt = (event: Event): void => {
@@ -104,17 +126,16 @@ function AppContent(): JSX.Element {
   const activeCount = state.timers.filter((timer) => timer.status === "active").length;
   const doneCount = state.timers.filter((timer) => elapsedSeconds(timer.startAt, now) >= timer.targetDurationSec).length;
   const templateCount = state.templates.length;
-  const avgElapsed =
-    state.timers.length === 0
-      ? 0
-      : Math.round(
-          state.timers.reduce((sum, timer) => sum + elapsedSeconds(timer.startAt, now), 0) / Math.max(1, state.timers.length)
-        );
 
   const washingRemaining = useMemo(() => {
     if (!state.washingMachine.active || !state.washingMachine.endAt) return 0;
     return Math.max(0, Math.floor((new Date(state.washingMachine.endAt).getTime() - now.getTime()) / 1000));
   }, [now, state.washingMachine]);
+
+  const washingDurationSec = state.washingMachine.presetMin * 60;
+  const washingProgress = state.washingMachine.active
+    ? Math.min(100, Math.max(0, Math.round(((washingDurationSec - washingRemaining) / washingDurationSec) * 100)))
+    : 0;
 
   const washingEndDate = state.washingMachine.endAt ? new Date(state.washingMachine.endAt) : null;
   const isWashingDone = state.washingMachine.active && washingEndDate !== null && now.getTime() >= washingEndDate.getTime();
@@ -188,11 +209,20 @@ function AppContent(): JSX.Element {
     dispatch({ type: "DELETE_TIMER", payload: { id } });
   };
 
-  const startWashingMachine = (): void => {
-    const minutes = Number(machineMinutes);
+  const startWashingMachine = (minutes: number): void => {
     if (!Number.isFinite(minutes) || minutes <= 0) return;
     dispatch({ type: "START_WASHING_MACHINE", payload: { minutes: Math.floor(minutes) } });
     triggerHaptics(state.settings.hapticsEnabled);
+  };
+
+  const startCustomWashingMachine = (): void => {
+    const minutes = parseHourMinutePreset(machineHours, machineInputMinutes);
+    if (!minutes) {
+      window.alert("Bitte gültige Stunden und Minuten eingeben.");
+      return;
+    }
+
+    startWashingMachine(minutes);
   };
 
   const stopWashingMachine = (): void => {
@@ -303,18 +333,40 @@ function AppContent(): JSX.Element {
     dispatch({ type: "DELETE_TEMPLATE", payload: { id: templateId } });
   };
 
-  const applyDefaults = (): void => {
-    const presets = parseMinutesInput(defaultPresetInput).sort((a, b) => a - b);
-
-    if (presets.length === 0) {
-      window.alert("Bitte gültige Minutenliste eingeben.");
+  const addWashingPreset = (): void => {
+    const presetMinutes = parseHourMinutePreset(newPresetHours, newPresetMinutes);
+    if (!presetMinutes) {
+      window.alert("Bitte gültige Stunden und Minuten für die Vorlage eingeben.");
       return;
     }
+
+    const nextPresets = Array.from(new Set([...state.settings.defaultWashingPresetsMin, presetMinutes])).sort(
+      (a, b) => a - b
+    );
 
     dispatch({
       type: "UPDATE_SETTINGS",
       payload: {
-        defaultWashingPresetsMin: presets
+        defaultWashingPresetsMin: nextPresets
+      }
+    });
+
+    setNewPresetHours("2");
+    setNewPresetMinutes("50");
+  };
+
+  const deleteWashingPreset = (presetMinutes: number): void => {
+    if (state.settings.defaultWashingPresetsMin.length <= 1) {
+      window.alert("Mindestens eine Waschmaschinen-Vorlage muss erhalten bleiben.");
+      return;
+    }
+
+    if (!confirmAction(`Vorlage ${formatPresetLabel(presetMinutes)} wirklich löschen?`)) return;
+
+    dispatch({
+      type: "UPDATE_SETTINGS",
+      payload: {
+        defaultWashingPresetsMin: state.settings.defaultWashingPresetsMin.filter((item) => item !== presetMinutes)
       }
     });
   };
@@ -365,7 +417,6 @@ function AppContent(): JSX.Element {
                 <p className="eyebrow">Schnellüberblick</p>
                 <h2>{activeCount} aktiv, {doneCount} fertig</h2>
               </div>
-              <p className="muted">Durchschnittliche Laufzeit: {formatDuration(avgElapsed, false)}</p>
               <div className="quick-actions hero-actions">
                 <button className="btn btn-tonal" onClick={() => setTab("timers")}>Timer verwalten</button>
                 <button className="btn btn-tonal" onClick={() => addTimer("Neue Ladung")}>Schnellstart</button>
@@ -399,26 +450,48 @@ function AppContent(): JSX.Element {
                 <>
                   <p className="big-timer">{isWashingDone ? "Fertig" : formatDuration(washingRemaining)}</p>
                   <p className="muted">Ende: {washingEndDate.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr</p>
+                  <div className="progress-track">
+                    <div className="progress-bar" style={{ width: `${washingProgress}%` }} />
+                  </div>
                 </>
               ) : (
                 <p className="muted">Kein Waschmaschinen-Timer aktiv.</p>
               )}
 
-              <div className="inline-form">
-                <select value={machineMinutes} onChange={(event) => setMachineMinutes(event.target.value)}>
-                  {state.settings.defaultWashingPresetsMin.map((value) => (
-                    <option key={value} value={value}>{value} Min</option>
-                  ))}
-                  <option value={machineMinutes}>{machineMinutes} Min (Custom)</option>
-                </select>
-                <input
-                  type="number"
-                  min={1}
-                  max={360}
-                  value={machineMinutes}
-                  onChange={(event) => setMachineMinutes(event.target.value)}
-                />
-                <button className="btn btn-primary" onClick={startWashingMachine}>Start</button>
+              <div className="washing-presets">
+                {state.settings.defaultWashingPresetsMin.map((value) => (
+                  <button
+                    key={value}
+                    className={`preset-chip ${state.washingMachine.active && value === state.washingMachine.presetMin ? "preset-chip-active" : ""}`}
+                    onClick={() => startWashingMachine(value)}
+                  >
+                    {formatPresetLabel(value)}
+                  </button>
+                ))}
+              </div>
+
+              <div className="machine-custom-grid">
+                <label className="machine-time-field">
+                  <span>Stunden</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={23}
+                    value={machineHours}
+                    onChange={(event) => setMachineHours(event.target.value)}
+                  />
+                </label>
+                <label className="machine-time-field">
+                  <span>Minuten</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={59}
+                    value={machineInputMinutes}
+                    onChange={(event) => setMachineInputMinutes(event.target.value)}
+                  />
+                </label>
+                <button className="btn btn-primary" onClick={startCustomWashingMachine}>Start</button>
               </div>
             </article>
 
@@ -542,14 +615,44 @@ function AppContent(): JSX.Element {
                 />
               </label>
 
-              <div className="inline-form">
-                <input
-                  type="text"
-                  value={defaultPresetInput}
-                  onChange={(event) => setDefaultPresetInput(event.target.value)}
-                  placeholder="60,90,120,170"
-                />
-                <button className="btn btn-primary" onClick={applyDefaults}>Defaults setzen</button>
+              <p className="muted">Waschmaschinen-Vorlagen verwaltest du im nächsten Abschnitt mit Stunden und Minuten.</p>
+            </article>
+
+            <article className="card">
+              <div className="section-head">
+                <h3>Waschmaschinen-Vorlagen</h3>
+              </div>
+              <div className="machine-custom-grid">
+                <label className="machine-time-field">
+                  <span>Stunden</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={23}
+                    value={newPresetHours}
+                    onChange={(event) => setNewPresetHours(event.target.value)}
+                  />
+                </label>
+                <label className="machine-time-field">
+                  <span>Minuten</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={59}
+                    value={newPresetMinutes}
+                    onChange={(event) => setNewPresetMinutes(event.target.value)}
+                  />
+                </label>
+                <button className="btn btn-primary" onClick={addWashingPreset}>Vorlage hinzufügen</button>
+              </div>
+
+              <div className="template-management-list">
+                {state.settings.defaultWashingPresetsMin.map((preset) => (
+                  <div key={preset} className="template-management-item">
+                    <span>{formatPresetLabel(preset)}</span>
+                    <button className="btn btn-danger" onClick={() => deleteWashingPreset(preset)}>Löschen</button>
+                  </div>
+                ))}
               </div>
             </article>
 
