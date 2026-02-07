@@ -52,6 +52,14 @@
         .options-menu {
             z-index: 50;
         }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -122,6 +130,232 @@
             </svg>
         );
 
+        const ChevronLeft = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="15,18 9,12 15,6"/>
+            </svg>
+        );
+
+        const ChevronRight = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="9,18 15,12 9,6"/>
+            </svg>
+        );
+
+        const ScrollPicker = ({ values, selected, onChange, format }) => {
+            const containerRef = React.useRef(null);
+            const itemHeight = 40;
+            const selectedIndex = values.indexOf(selected);
+
+            useEffect(() => {
+                if (containerRef.current) {
+                    containerRef.current.scrollTop = selectedIndex * itemHeight;
+                }
+            }, []);
+
+            const handleScroll = (e) => {
+                const scrollTop = e.target.scrollTop;
+                const index = Math.round(scrollTop / itemHeight);
+                if (index >= 0 && index < values.length && values[index] !== selected) {
+                    onChange(values[index]);
+                }
+            };
+
+            return (
+                <div
+                    ref={containerRef}
+                    onScroll={handleScroll}
+                    className="h-32 overflow-y-auto snap-y snap-mandatory scrollbar-hide relative z-10"
+                    style={{ scrollSnapType: 'y mandatory' }}
+                >
+                    <div style={{ height: itemHeight }} />
+                    {values.map((val, idx) => (
+                        <div
+                            key={val}
+                            onClick={() => {
+                                onChange(val);
+                                if (containerRef.current) {
+                                    containerRef.current.scrollTo({ top: idx * itemHeight, behavior: 'smooth' });
+                                }
+                            }}
+                            className={`h-10 flex items-center justify-center text-xl cursor-pointer snap-center transition-colors ${
+                                val === selected ? 'text-blue-700 font-bold text-2xl' : 'text-gray-300'
+                            }`}
+                            style={{ scrollSnapAlign: 'center' }}
+                        >
+                            {format ? format(val) : val}
+                        </div>
+                    ))}
+                    <div style={{ height: itemHeight }} />
+                </div>
+            );
+        };
+
+        const DateTimePicker = ({ value, onChange, onClose }) => {
+            const dateValue = value ? new Date(value) : new Date();
+            const [viewDate, setViewDate] = useState(new Date(dateValue.getFullYear(), dateValue.getMonth(), 1));
+            const [selectedDate, setSelectedDate] = useState(dateValue);
+            const [hours, setHours] = useState(dateValue.getHours());
+            const [minutes, setMinutes] = useState(dateValue.getMinutes());
+
+            const weekDays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+            const monthNames = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+
+            const hoursArray = Array.from({ length: 24 }, (_, i) => i);
+            const minutesArray = Array.from({ length: 60 }, (_, i) => i);
+
+            const getDaysInMonth = (date) => {
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                const days = [];
+
+                let startDay = firstDay.getDay() - 1;
+                if (startDay === -1) startDay = 6;
+
+                for (let i = startDay - 1; i >= 0; i--) {
+                    const d = new Date(year, month, -i);
+                    days.push({ date: d, currentMonth: false });
+                }
+
+                for (let i = 1; i <= lastDay.getDate(); i++) {
+                    days.push({ date: new Date(year, month, i), currentMonth: true });
+                }
+
+                const remaining = 42 - days.length;
+                for (let i = 1; i <= remaining; i++) {
+                    days.push({ date: new Date(year, month + 1, i), currentMonth: false });
+                }
+
+                return days;
+            };
+
+            const isSameDay = (d1, d2) => {
+                return d1.getDate() === d2.getDate() &&
+                       d1.getMonth() === d2.getMonth() &&
+                       d1.getFullYear() === d2.getFullYear();
+            };
+
+            const handleDayClick = (day) => {
+                setSelectedDate(day.date);
+            };
+
+            const handleConfirm = () => {
+                const result = new Date(selectedDate);
+                result.setHours(hours);
+                result.setMinutes(minutes);
+                result.setSeconds(0);
+                const localDateTime = new Date(result.getTime() - result.getTimezoneOffset() * 60000)
+                    .toISOString().slice(0, 16);
+                onChange(localDateTime);
+                onClose();
+            };
+
+            const prevMonth = () => {
+                setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
+            };
+
+            const nextMonth = () => {
+                setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
+            };
+
+            const days = getDaysInMonth(viewDate);
+            const formatNum = (n) => n.toString().padStart(2, '0');
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden">
+                        <div className="bg-blue-600 text-white p-4">
+                            <div className="text-sm opacity-80">Ausgewählt</div>
+                            <div className="text-xl font-semibold">
+                                {selectedDate.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                            </div>
+                            <div className="text-lg">{formatNum(hours)}:{formatNum(minutes)} Uhr</div>
+                        </div>
+
+                        <div className="p-4">
+                            <div className="flex items-center justify-between mb-4">
+                                <button onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-full">
+                                    <ChevronLeft size={20} />
+                                </button>
+                                <span className="font-semibold">
+                                    {monthNames[viewDate.getMonth()]} {viewDate.getFullYear()}
+                                </span>
+                                <button onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-full">
+                                    <ChevronRight size={20} />
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-7 gap-1 mb-2">
+                                {weekDays.map(day => (
+                                    <div key={day} className="text-center text-xs font-semibold text-gray-500 py-2">
+                                        {day}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="grid grid-cols-7 gap-1">
+                                {days.map((day, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => handleDayClick(day)}
+                                        className={`p-2 text-sm rounded-full transition-colors ${
+                                            !day.currentMonth ? 'text-gray-300' :
+                                            isSameDay(day.date, selectedDate) ? 'bg-blue-600 text-white' :
+                                            isSameDay(day.date, new Date()) ? 'bg-blue-100 text-blue-600' :
+                                            'hover:bg-gray-100'
+                                        }`}
+                                    >
+                                        {day.date.getDate()}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="mt-4 pt-4 border-t">
+                                <div className="flex items-center justify-center gap-4">
+                                    <div className="relative w-16 h-32 overflow-hidden">
+                                        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 bg-blue-50 rounded-lg pointer-events-none z-0" />
+                                        <ScrollPicker
+                                            values={hoursArray}
+                                            selected={hours}
+                                            onChange={setHours}
+                                            format={formatNum}
+                                        />
+                                    </div>
+                                    <span className="text-2xl font-bold text-gray-400">:</span>
+                                    <div className="relative w-16 h-32 overflow-hidden">
+                                        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 bg-blue-50 rounded-lg pointer-events-none z-0" />
+                                        <ScrollPicker
+                                            values={minutesArray}
+                                            selected={minutes}
+                                            onChange={setMinutes}
+                                            format={formatNum}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex border-t">
+                            <button
+                                onClick={onClose}
+                                className="flex-1 px-4 py-3 text-gray-600 hover:bg-gray-50 font-medium"
+                            >
+                                Abbrechen
+                            </button>
+                            <button
+                                onClick={handleConfirm}
+                                className="flex-1 px-4 py-3 text-blue-600 hover:bg-blue-50 font-medium border-l"
+                            >
+                                OK
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
 
         const LaundryTimerApp = () => {
 
@@ -131,8 +365,7 @@
                     if (storedTimers) {
                         return JSON.parse(storedTimers).map(timer => ({
                             ...timer,
-                            startTime: new Date(timer.startTime),
-                            completionTime: timer.completionTime ? new Date(timer.completionTime) : null
+                            startTime: new Date(timer.startTime)
                         }));
                     }
                 } catch (e) {
@@ -146,12 +379,46 @@
             const [newLoadName, setNewLoadName] = useState('');
             const [editingTimer, setEditingTimer] = useState(null);
             const [editDateTime, setEditDateTime] = useState('');
+            const [showDatePicker, setShowDatePicker] = useState(false);
             const [currentTime, setCurrentTime] = useState(new Date());
             const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+            const [washingMachineEndTime, setWashingMachineEndTime] = useState(() => {
+                const stored = localStorage.getItem('washingMachineEndTime');
+                return stored ? new Date(stored) : null;
+            });
+            const [showWashingTimeSelect, setShowWashingTimeSelect] = useState(false);
+            const [customWashingMinutes, setCustomWashingMinutes] = useState(170);
 
             useEffect(() => {
                 localStorage.setItem('laundryTimers', JSON.stringify(timers));
             }, [timers]);
+
+            useEffect(() => {
+                if (washingMachineEndTime) {
+                    localStorage.setItem('washingMachineEndTime', washingMachineEndTime.toISOString());
+                } else {
+                    localStorage.removeItem('washingMachineEndTime');
+                }
+            }, [washingMachineEndTime]);
+
+            const startWashingMachine = (minutes = 170) => {
+                const endTime = new Date(Date.now() + minutes * 60 * 1000);
+                setWashingMachineEndTime(endTime);
+                setShowWashingTimeSelect(false);
+            };
+
+            const stopWashingMachine = () => {
+                setWashingMachineEndTime(null);
+            };
+
+            const getWashingMachineRemaining = () => {
+                if (!washingMachineEndTime) return null;
+                const remaining = Math.max(0, Math.floor((washingMachineEndTime.getTime() - currentTime.getTime()) / 1000));
+                return remaining;
+            };
+
+            const washingRemaining = getWashingMachineRemaining();
+            const isWashingDone = washingRemaining === 0 && washingMachineEndTime;
 
 
             useEffect(() => {
@@ -166,10 +433,7 @@
                     const newTimer = {
                         id: Date.now(),
                         name: newLoadName,
-                        startTime: new Date(),
-                        completedElapsedTime: null,
-                        isCompleted: false,
-                        completionTime: null
+                        startTime: new Date()
                     };
                     setTimers([...timers, newTimer]);
                     setNewLoadName('');
@@ -202,35 +466,16 @@
                     );
                     setEditingTimer(null);
                     setEditDateTime('');
+                    setShowDatePicker(false);
                 }
             };
 
             const cancelEditTimer = () => {
                 setEditingTimer(null);
                 setEditDateTime('');
+                setShowDatePicker(false);
             };
 
-            const completeTimer = (id) => {
-                const timerToComplete = timers.find(t => t.id === id);
-                const confirmMessage = `Möchten Sie "${timerToComplete.name}" als fertig markieren?\n\nDer Timer wird gestoppt und als abgeschlossen markiert.`;
-
-                if (window.confirm(confirmMessage)) {
-                    setTimers(prevTimers =>
-                        prevTimers.map(timer => {
-                            if (timer.id === id) {
-                                const finalElapsedTime = Math.floor((currentTime.getTime() - timer.startTime.getTime()) / 1000);
-                                return {
-                                    ...timer,
-                                    isCompleted: true,
-                                    completedElapsedTime: finalElapsedTime,
-                                    completionTime: new Date()
-                                };
-                            }
-                            return timer;
-                        })
-                    );
-                }
-            };
 
             const deleteTimer = (id) => {
                 const timerToDelete = timers.find(t => t.id === id);
@@ -320,8 +565,7 @@
                     
                     const processedTimers = importedTimers.map(timer => ({
                         ...timer,
-                        startTime: new Date(timer.startTime),
-                        completionTime: timer.completionTime ? new Date(timer.completionTime) : null
+                        startTime: new Date(timer.startTime)
                     }));
                     
                     const confirmMessage = `${importedTimers.length} Timer gefunden.\n\nMöchten Sie diese importieren?\n\n⚠️ Achtung: Ihre aktuellen Timer werden ersetzt!`;
@@ -384,36 +628,76 @@
 
             const sortedTimers = timers
                 .slice()
-                .sort((a, b) => {
-                    if (a.isCompleted !== b.isCompleted) {
-                        return a.isCompleted ? 1 : -1;
-                    }
-                    if (a.isCompleted) {
-                        const timeA = a.completionTime ? a.completionTime.getTime() : 0;
-                        const timeB = b.completionTime ? b.completionTime.getTime() : 0;
-                        return timeA - timeB;
-                    }
-                    return a.startTime.getTime() - b.startTime.getTime();
-                });
+                .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 
             const renderCompactTimer = (timer) => {
-                const currentElapsedTime = timer.isCompleted
-                    ? timer.completedElapsedTime
-                    : Math.floor((currentTime.getTime() - timer.startTime.getTime()) / 1000);
-
+                const currentElapsedTime = Math.floor((currentTime.getTime() - timer.startTime.getTime()) / 1000);
                 const targetSeconds = 3 * 24 * 60 * 60;
                 const progressPercentage = Math.min((currentElapsedTime / targetSeconds) * 100, 100);
                 const isTargetReached = currentElapsedTime >= targetSeconds;
+                const isEditing = editingTimer === timer.id;
+
+                if (isEditing) {
+                    return (
+                        <div
+                            key={timer.id}
+                            className="compact-timer-card bg-white rounded-lg shadow-md p-4 border-l-4 border-yellow-500"
+                        >
+                            <div className="space-y-3">
+                                <h3 className="text-lg font-semibold text-gray-800">
+                                    {timer.name}
+                                </h3>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Startzeit ändern:
+                                    </label>
+                                    <button
+                                        onClick={() => setShowDatePicker(true)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        {editDateTime ? (
+                                            <span>
+                                                {new Date(editDateTime).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })} - {new Date(editDateTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        ) : (
+                                            <span className="text-gray-400">Datum & Zeit wählen...</span>
+                                        )}
+                                    </button>
+                                </div>
+
+                                <div className="flex gap-2 pt-2">
+                                    <button
+                                        onClick={saveEditTimer}
+                                        className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                                    >
+                                        Speichern
+                                    </button>
+                                    <button
+                                        onClick={cancelEditTimer}
+                                        className="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                                    >
+                                        Abbrechen
+                                    </button>
+                                </div>
+                            </div>
+
+                            {showDatePicker && (
+                                <DateTimePicker
+                                    value={editDateTime}
+                                    onChange={(val) => setEditDateTime(val)}
+                                    onClose={() => setShowDatePicker(false)}
+                                />
+                            )}
+                        </div>
+                    );
+                }
 
                 return (
                     <div
                         key={timer.id}
                         className={`compact-timer-card bg-white rounded-lg shadow-md p-4 border-l-4 ${
-                            timer.isCompleted 
-                                ? 'border-gray-400 bg-gray-50' 
-                                : isTargetReached 
-                                    ? 'border-green-500' 
-                                    : 'border-blue-500'
+                            isTargetReached ? 'border-green-500' : 'border-blue-500'
                         }`}
                     >
                         <div className="flex items-center justify-between">
@@ -423,57 +707,43 @@
                                 </h3>
                                 <div className="flex items-center gap-2 mt-1">
                                     <span className={`text-sm font-mono font-bold ${
-                                        isTargetReached && !timer.isCompleted 
-                                            ? 'text-green-700' 
-                                            : timer.isCompleted 
-                                                ? 'text-gray-600' 
-                                                : 'text-blue-600'
+                                        isTargetReached ? 'text-green-700' : 'text-blue-600'
                                     }`}>
                                         {formatTime(currentElapsedTime)}
                                     </span>
-                                    {timer.isCompleted && (
-                                        <CheckCircle className="text-green-600" size={16} />
-                                    )}
-                                    {isTargetReached && !timer.isCompleted && (
+                                    {isTargetReached && (
                                         <span className="text-green-600 text-xs font-bold">✓ 3T</span>
                                     )}
                                 </div>
-                                {!timer.isCompleted && (
-                                    <div className="mt-2">
-                                        <div className="w-full bg-gray-200 rounded-full h-2">
-                                            <div
-                                                className={`h-2 rounded-full transition-all duration-1000 ${
-                                                    isTargetReached ? 'bg-green-500' : 'bg-blue-500'
-                                                }`}
-                                                style={{ width: `${progressPercentage}%` }}
-                                            />
-                                        </div>
-                                        <div className="text-xs text-gray-500 mt-1">
-                                            {Math.round(progressPercentage)}% - {
-                                                isTargetReached 
-                                                    ? 'Ziel erreicht!' 
-                                                    : `Noch ${formatTime(Math.max(0, targetSeconds - currentElapsedTime), false)}`
-                                            }
-                                        </div>
+                                <div className="mt-2">
+                                    <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div
+                                            className={`h-2 rounded-full transition-all duration-1000 ${
+                                                isTargetReached ? 'bg-green-500' : 'bg-blue-500'
+                                            }`}
+                                            style={{ width: `${progressPercentage}%` }}
+                                        />
                                     </div>
-                                )}
+                                    <div className="text-xs text-gray-500 mt-1">
+                                        {Math.round(progressPercentage)}% - {
+                                            isTargetReached 
+                                                ? 'Ziel erreicht!' 
+                                                : `Noch ${formatTime(Math.max(0, targetSeconds - currentElapsedTime), false)}`
+                                        }
+                                    </div>
+                                </div>
                                 <div className="text-xs text-gray-500 mt-1">
-                                    {timer.isCompleted
-                                        ? `Fertig: ${timer.completionTime.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}`
-                                        : `Seit: ${timer.startTime.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}`
-                                    }
+                                    Seit: {timer.startTime.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })} {timer.startTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
                                 </div>
                             </div>
                             <div className="flex flex-col gap-1 ml-2">
-                                {!timer.isCompleted && (
-                                    <button
-                                        onClick={() => completeTimer(timer.id)}
-                                        className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors touch-target"
-                                        title="Als fertig markieren"
-                                    >
-                                        <CheckCircle size={18} />
-                                    </button>
-                                )}
+                                <button
+                                    onClick={() => startEditTimer(timer.id)}
+                                    className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors touch-target"
+                                    title="Startzeit bearbeiten"
+                                >
+                                    <Edit size={18} />
+                                </button>
                                 <button
                                     onClick={() => deleteTimer(timer.id)}
                                     className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors touch-target"
@@ -546,6 +816,91 @@
                            </div>
                        </div>
 
+                       {/* Waschmaschinen-Timer */}
+                       {washingMachineEndTime ? (
+                           <div className={`mb-4 p-4 rounded-xl shadow-lg ${isWashingDone ? 'bg-green-500 animate-pulse' : 'bg-gradient-to-r from-purple-500 to-indigo-600'}`}>
+                               <div className="flex items-center justify-between text-white">
+                                   <div className="flex items-center gap-3">
+                                       <div className="text-3xl">🧺</div>
+                                       <div>
+                                           <div className="text-sm opacity-80">Waschmaschine</div>
+                                           <div className="text-2xl font-bold font-mono">
+                                               {isWashingDone ? 'Fertig!' : formatTime(washingRemaining)}
+                                           </div>
+                                       </div>
+                                   </div>
+                                   <button
+                                       onClick={stopWashingMachine}
+                                       className="px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg text-sm font-medium transition-colors"
+                                   >
+                                       {isWashingDone ? 'OK' : 'Stopp'}
+                                   </button>
+                               </div>
+                               {!isWashingDone && (
+                                   <div className="mt-3">
+                                       <div className="w-full bg-white bg-opacity-20 rounded-full h-2">
+                                           <div
+                                               className="h-2 rounded-full bg-white transition-all duration-1000"
+                                               style={{ width: `${Math.max(0, 100 - (washingRemaining / (170 * 60)) * 100)}%` }}
+                                           />
+                                       </div>
+                                       <div className="text-xs text-white text-opacity-70 mt-1">
+                                           Fertig um {washingMachineEndTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+                                       </div>
+                                   </div>
+                               )}
+                           </div>
+                       ) : (
+                           <div className="mb-4 flex justify-end relative">
+                               <div className="flex items-center">
+                                   <button
+                                       onClick={() => startWashingMachine(170)}
+                                       className="text-gray-400 hover:text-purple-600 text-sm flex items-center gap-1 px-3 py-1 rounded-l-lg hover:bg-purple-50 transition-colors"
+                                   >
+                                       <span>🧺</span>
+                                       <span>2:50</span>
+                                   </button>
+                                   <button
+                                       onClick={() => setShowWashingTimeSelect(!showWashingTimeSelect)}
+                                       className="text-gray-400 hover:text-purple-600 text-sm px-1 py-1 rounded-r-lg hover:bg-purple-50 transition-colors border-l border-gray-200"
+                                   >
+                                       ▼
+                                   </button>
+                               </div>
+                               {showWashingTimeSelect && (
+                                   <>
+                                       <div className="fixed inset-0" onClick={() => setShowWashingTimeSelect(false)} />
+                                       <div className="absolute top-8 right-0 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-40 z-50">
+                                           <button onClick={() => startWashingMachine(60)} className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm">1:00</button>
+                                           <button onClick={() => startWashingMachine(90)} className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm">1:30</button>
+                                           <button onClick={() => startWashingMachine(120)} className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm">2:00</button>
+                                           <button onClick={() => startWashingMachine(170)} className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm font-medium">2:50 (Standard)</button>
+                                           <button onClick={() => startWashingMachine(180)} className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm">3:00</button>
+                                           <div className="border-t border-gray-200 mt-1 pt-1 px-2">
+                                               <div className="flex items-center gap-2 py-1">
+                                                   <input
+                                                       type="number"
+                                                       min="1"
+                                                       max="300"
+                                                       value={customWashingMinutes}
+                                                       onChange={(e) => setCustomWashingMinutes(parseInt(e.target.value) || 0)}
+                                                       className="w-16 px-2 py-1 border rounded text-sm"
+                                                       placeholder="Min"
+                                                   />
+                                                   <span className="text-xs text-gray-500">Min</span>
+                                                   <button
+                                                       onClick={() => startWashingMachine(customWashingMinutes)}
+                                                       className="px-2 py-1 bg-purple-600 text-white rounded text-xs"
+                                                   >
+                                                       Start
+                                                   </button>
+                                               </div>
+                                           </div>
+                                       </div>
+                                   </>
+                               )}
+                           </div>
+                       )}
 
                        {/* Neue Wäscheladung hinzufügen */}
                        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6">
@@ -577,31 +932,18 @@
                                <div className="flex justify-between items-center text-center">
                                    <div className="flex-1">
                                        <div className="text-lg font-bold text-blue-600">
-                                           {timers.filter(t => !t.isCompleted).length}
+                                           {timers.length}
                                        </div>
                                        <div className="text-xs text-gray-600">Aktiv</div>
                                    </div>
                                    <div className="flex-1">
                                        <div className="text-lg font-bold text-green-600">
-                                           {timers.filter(t => t.isCompleted).length}
-                                       </div>
-                                       <div className="text-xs text-gray-600">Fertig</div>
-                                   </div>
-                                   <div className="flex-1">
-                                       <div className="text-lg font-bold text-yellow-600">
                                            {timers.filter(t => {
-                                               if (t.isCompleted) return false;
                                                const elapsed = Math.floor((currentTime.getTime() - t.startTime.getTime()) / 1000);
                                                return elapsed >= (3 * 24 * 60 * 60);
                                            }).length}
                                        </div>
                                        <div className="text-xs text-gray-600">Ziel erreicht</div>
-                                   </div>
-                                   <div className="flex-1">
-                                       <div className="text-lg font-bold text-gray-600">
-                                           {timers.length}
-                                       </div>
-                                       <div className="text-xs text-gray-600">Gesamt</div>
                                    </div>
                                </div>
                            </div>
