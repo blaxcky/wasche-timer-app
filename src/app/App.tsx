@@ -379,16 +379,6 @@ function AppContent(): JSX.Element {
   };
 
   const resetRuntimeAndReload = async (): Promise<void> => {
-    const firstConfirm = window.confirm(
-      "App-Cache und Service Worker werden zurückgesetzt.\n\nTimer und Einstellungen bleiben erhalten.\n\nJetzt fortfahren?"
-    );
-    if (!firstConfirm) return;
-
-    const secondConfirm = window.confirm(
-      "Letzte Bestätigung:\nDie App wird direkt neu geladen, damit die aktuelle Version erzwungen wird."
-    );
-    if (!secondConfirm) return;
-
     await resetAppRuntimeCaches();
 
     const reloadUrl = new URL(window.location.href);
