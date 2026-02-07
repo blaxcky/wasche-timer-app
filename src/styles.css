@@ -514,16 +514,18 @@ button:focus-visible {
   padding: 0.4rem 0.52rem;
 }
 
-.machine-inline-field input {
-  width: 2.6ch;
+.machine-inline-field select {
+  width: 4.2ch;
   min-height: 0;
   border: none;
   padding: 0;
   text-align: right;
   background: transparent;
+  font-weight: 700;
+  appearance: none;
 }
 
-.machine-inline-field input:focus {
+.machine-inline-field select:focus {
   outline: none;
 }
 
@@ -537,7 +539,7 @@ button:focus-visible {
   background: #f1f5f9;
 }
 
-.machine-inline-field input:disabled {
+.machine-inline-field select:disabled {
   color: var(--muted);
   cursor: not-allowed;
 }

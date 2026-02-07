@@ -11,6 +11,9 @@ const NAV_ITEMS: Array<{ id: TabId; label: string; icon: string }> = [
   { id: "settings", label: "Einstellungen", icon: "settings" }
 ];
 
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, value) => value);
+const MINUTE_OPTIONS = Array.from({ length: 12 }, (_, index) => index * 5);
+
 function formatPresetLabel(totalMinutes: number): string {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
@@ -22,6 +25,11 @@ function splitPresetMinutes(totalMinutes: number): { hours: number; minutes: num
     hours: Math.floor(totalMinutes / 60),
     minutes: totalMinutes % 60
   };
+}
+
+function snapToFiveMinuteStep(value: number): number {
+  const snapped = Math.round(value / 5) * 5;
+  return Math.min(55, Math.max(0, snapped));
 }
 
 function parseHourMinutePreset(hoursInput: string, minutesInput: string): number | null {
@@ -91,7 +99,9 @@ function AppContent(): JSX.Element {
   const [tab, setTab] = useState<TabId>("dashboard");
   const [newTimerName, setNewTimerName] = useState("");
   const [machineHours, setMachineHours] = useState(initialMachinePreset.hours.toString());
-  const [machineInputMinutes, setMachineInputMinutes] = useState(initialMachinePreset.minutes.toString());
+  const [machineInputMinutes, setMachineInputMinutes] = useState(
+    snapToFiveMinuteStep(initialMachinePreset.minutes).toString()
+  );
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
   const [newTemplateName, setNewTemplateName] = useState("");
   const [newTemplateEmoji, setNewTemplateEmoji] = useState("🧺");
@@ -106,7 +116,7 @@ function AppContent(): JSX.Element {
     if (state.washingMachine.active) return;
     const preset = splitPresetMinutes(state.washingMachine.presetMin);
     setMachineHours(preset.hours.toString());
-    setMachineInputMinutes(preset.minutes.toString());
+    setMachineInputMinutes(snapToFiveMinuteStep(preset.minutes).toString());
   }, [state.washingMachine.active, state.washingMachine.presetMin]);
 
   useEffect(() => {
@@ -512,27 +522,33 @@ function AppContent(): JSX.Element {
 
               <div className="machine-inline-controls">
                 <label className={`machine-inline-field ${state.washingMachine.active ? "machine-inline-field-disabled" : ""}`}>
-                  <input
-                    type="number"
-                    min={0}
-                    max={23}
+                  <select
                     value={machineHours}
                     onChange={(event) => setMachineHours(event.target.value)}
                     aria-label="Stunden"
                     disabled={state.washingMachine.active}
-                  />
+                  >
+                    {HOUR_OPTIONS.map((value) => (
+                      <option key={`hour-${value}`} value={value.toString()}>
+                        {value.toString().padStart(2, "0")}
+                      </option>
+                    ))}
+                  </select>
                   <span>h</span>
                 </label>
                 <label className={`machine-inline-field ${state.washingMachine.active ? "machine-inline-field-disabled" : ""}`}>
-                  <input
-                    type="number"
-                    min={0}
-                    max={59}
+                  <select
                     value={machineInputMinutes}
                     onChange={(event) => setMachineInputMinutes(event.target.value)}
                     aria-label="Minuten"
                     disabled={state.washingMachine.active}
-                  />
+                  >
+                    {MINUTE_OPTIONS.map((value) => (
+                      <option key={`minute-${value}`} value={value.toString()}>
+                        {value.toString().padStart(2, "0")}
+                      </option>
+                    ))}
+                  </select>
                   <span>m</span>
                 </label>
                 <button
