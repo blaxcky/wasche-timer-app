@@ -171,11 +171,17 @@ button:focus-visible {
   justify-content: space-between;
   align-items: center;
   gap: 0.5rem;
+  padding-bottom: 0.38rem;
+  margin-bottom: 0.06rem;
+  border-bottom: 1px solid rgba(13, 95, 127, 0.2);
 }
 
 .overview-panel-head h4 {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.97rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: #163748;
 }
 
 .overview-count {
