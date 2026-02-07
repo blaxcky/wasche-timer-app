@@ -136,10 +136,8 @@ function AppContent(): JSX.Element {
   );
 
   const activeCount = state.timers.filter((timer) => timer.status === "active").length;
-  const doneCount = state.timers.filter((timer) => {
-    const elapsed = elapsedSeconds(timer.startAt, now);
-    return timer.status === "done" || elapsed >= timer.targetDurationSec;
-  }).length;
+  const doneCount = state.timers.filter((timer) => elapsedSeconds(timer.startAt, now) >= timer.targetDurationSec).length;
+  const reminderCount = state.timers.filter((timer) => timer.reminderEnabled).length;
   const avgElapsed =
     state.timers.length === 0
       ? 0
@@ -253,15 +251,7 @@ function AppContent(): JSX.Element {
 
   const deleteTimer = (id: string): void => {
     if (!confirmAction("Timer wirklich löschen?")) return;
-    dispatch({ type: "DELETE_TIMER", payload: { id, archiveReason: "deleted" } });
-  };
-
-  const archiveTimer = (id: string): void => {
-    dispatch({ type: "ARCHIVE_TIMER", payload: { id, reason: "archived" } });
-  };
-
-  const markDone = (id: string): void => {
-    dispatch({ type: "SET_TIMER_STATUS", payload: { id, status: "done" } });
+    dispatch({ type: "DELETE_TIMER", payload: { id } });
   };
 
   const startWashingMachine = (): void => {
@@ -354,7 +344,7 @@ function AppContent(): JSX.Element {
 
       const raw = await file.text();
       const importedState = parseBackupPayload(raw);
-      if (!confirmAction(`Import ${importedState.timers.length} Timer und ${importedState.history.length} Archiv-Einträge?`)) return;
+      if (!confirmAction(`Import ${importedState.timers.length} Timer?`)) return;
 
       dispatch({ type: "REPLACE_STATE", payload: importedState });
       window.alert("Backup erfolgreich importiert.");
@@ -444,8 +434,8 @@ function AppContent(): JSX.Element {
                 <strong>{doneCount}</strong>
               </article>
               <article className="card kpi-card">
-                <p>Im Archiv</p>
-                <strong>{state.history.length}</strong>
+                <p>Mit Reminder</p>
+                <strong>{reminderCount}</strong>
               </article>
             </div>
 
@@ -484,32 +474,6 @@ function AppContent(): JSX.Element {
               </div>
             </article>
 
-            <article className="card">
-              <div className="section-head">
-                <h3>Archiv / Verlauf</h3>
-              </div>
-
-              {state.history.length === 0 ? (
-                <p className="muted">Noch keine archivierten Timer.</p>
-              ) : (
-                <ul className="history-list">
-                  {state.history.slice(0, 5).map((entry) => (
-                    <li key={entry.id}>
-                      <div>
-                        <strong>{entry.timerSnapshot.name}</strong>
-                        <p>{formatDateTime(entry.archivedAt)}</p>
-                      </div>
-                      <button
-                        className="btn btn-text"
-                        onClick={() => dispatch({ type: "RESTORE_HISTORY", payload: { historyId: entry.id } })}
-                      >
-                        Wiederherstellen
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </article>
           </section>
         )}
 
@@ -565,7 +529,7 @@ function AppContent(): JSX.Element {
                           <p>Seit {formatDateTime(timer.startAt)}</p>
                         </div>
                         <span className={`badge ${reached ? "badge-success" : "badge-info"}`}>
-                          {timer.status === "done" ? "Erledigt" : reached ? "Ziel erreicht" : "Aktiv"}
+                          {reached ? "Ziel erreicht" : "Aktiv"}
                         </span>
                       </div>
 
@@ -582,10 +546,6 @@ function AppContent(): JSX.Element {
 
                       <div className="timer-actions">
                         <button className="btn btn-text" onClick={() => openEditor(timer)}>Bearbeiten</button>
-                        {timer.status !== "done" ? (
-                          <button className="btn btn-tonal" onClick={() => markDone(timer.id)}>Als fertig</button>
-                        ) : null}
-                        <button className="btn btn-tonal" onClick={() => archiveTimer(timer.id)}>Archivieren</button>
                         <button className="btn btn-danger" onClick={() => deleteTimer(timer.id)}>Löschen</button>
                       </div>
                     </article>
