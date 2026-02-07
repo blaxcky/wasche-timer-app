@@ -92,6 +92,14 @@ interface EditDraft {
   startAtInput: string;
 }
 
+interface ConfirmDialogState {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  cancelLabel: string;
+  tone: "default" | "danger";
+}
+
 function AppContent(): JSX.Element {
   const { state, dispatch } = useAppState();
   const now = useNow();
@@ -108,9 +116,11 @@ function AppContent(): JSX.Element {
   const [newPresetHours, setNewPresetHours] = useState("2");
   const [newPresetMinutes, setNewPresetMinutes] = useState("50");
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null);
   const washingDoneRef = useRef(false);
   const templateRowRef = useRef<HTMLDivElement | null>(null);
   const [templateRowScrollable, setTemplateRowScrollable] = useState(false);
+  const confirmResolveRef = useRef<((result: boolean) => void) | null>(null);
 
   useEffect(() => {
     if (state.washingMachine.active) return;
@@ -211,10 +221,51 @@ function AppContent(): JSX.Element {
     }
   }, [isWashingDone, state.settings.hapticsEnabled]);
 
-  const confirmAction = (text: string): boolean => {
-    if (!state.settings.confirmationsEnabled) return true;
-    return window.confirm(text);
+  useEffect(
+    () => () => {
+      if (confirmResolveRef.current) {
+        confirmResolveRef.current(false);
+        confirmResolveRef.current = null;
+      }
+    },
+    []
+  );
+
+  const closeConfirmDialog = (result: boolean): void => {
+    const resolve = confirmResolveRef.current;
+    confirmResolveRef.current = null;
+    setConfirmDialog(null);
+    resolve?.(result);
   };
+
+  const requestConfirm = (config: Omit<ConfirmDialogState, "cancelLabel"> & { cancelLabel?: string }): Promise<boolean> => {
+    if (!state.settings.confirmationsEnabled) return Promise.resolve(true);
+
+    return new Promise((resolve) => {
+      if (confirmResolveRef.current) {
+        confirmResolveRef.current(false);
+      }
+
+      confirmResolveRef.current = resolve;
+      setConfirmDialog({
+        ...config,
+        cancelLabel: config.cancelLabel ?? "Abbrechen"
+      });
+    });
+  };
+
+  useEffect(() => {
+    if (!confirmDialog) return;
+
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") {
+        closeConfirmDialog(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [confirmDialog]);
 
   const addTimer = (nameOverride?: string, templateOverride?: LaundryTemplate): void => {
     const name = (nameOverride ?? newTimerName).trim();
@@ -264,8 +315,14 @@ function AppContent(): JSX.Element {
     setEditDraft(null);
   };
 
-  const deleteTimer = (id: string): void => {
-    if (!confirmAction("Timer wirklich löschen?")) return;
+  const deleteTimer = async (id: string): Promise<void> => {
+    const confirmed = await requestConfirm({
+      title: "Timer löschen",
+      message: "Diesen Timer wirklich löschen?",
+      confirmLabel: "Löschen",
+      tone: "danger"
+    });
+    if (!confirmed) return;
     dispatch({ type: "DELETE_TIMER", payload: { id } });
   };
 
@@ -286,8 +343,14 @@ function AppContent(): JSX.Element {
     startWashingMachine(minutes);
   };
 
-  const stopWashingMachine = (): void => {
-    if (!confirmAction("Waschmaschinen-Timer stoppen?")) return;
+  const stopWashingMachine = async (): Promise<void> => {
+    const confirmed = await requestConfirm({
+      title: "Waschmaschine stoppen",
+      message: "Den laufenden Waschmaschinen-Timer jetzt stoppen?",
+      confirmLabel: "Stoppen",
+      tone: "default"
+    });
+    if (!confirmed) return;
     dispatch({ type: "STOP_WASHING_MACHINE" });
   };
 
@@ -364,7 +427,13 @@ function AppContent(): JSX.Element {
 
       const raw = await file.text();
       const importedState = parseBackupPayload(raw);
-      if (!confirmAction(`Import ${importedState.timers.length} Timer?`)) return;
+      const confirmed = await requestConfirm({
+        title: "Backup importieren",
+        message: `Sollen ${importedState.timers.length} Timer importiert werden?`,
+        confirmLabel: "Importieren",
+        tone: "default"
+      });
+      if (!confirmed) return;
 
       dispatch({ type: "REPLACE_STATE", payload: importedState });
       window.alert("Backup erfolgreich importiert.");
@@ -389,8 +458,14 @@ function AppContent(): JSX.Element {
     setNewTemplateName("");
   };
 
-  const deleteTemplate = (templateId: string, templateName: string): void => {
-    if (!confirmAction(`Vorlage "${templateName}" wirklich löschen?`)) return;
+  const deleteTemplate = async (templateId: string, templateName: string): Promise<void> => {
+    const confirmed = await requestConfirm({
+      title: "Vorlage löschen",
+      message: `Vorlage "${templateName}" wirklich löschen?`,
+      confirmLabel: "Löschen",
+      tone: "danger"
+    });
+    if (!confirmed) return;
     dispatch({ type: "DELETE_TEMPLATE", payload: { id: templateId } });
   };
 
@@ -416,13 +491,19 @@ function AppContent(): JSX.Element {
     setNewPresetMinutes("50");
   };
 
-  const deleteWashingPreset = (presetMinutes: number): void => {
+  const deleteWashingPreset = async (presetMinutes: number): Promise<void> => {
     if (state.settings.defaultWashingPresetsMin.length <= 1) {
       window.alert("Mindestens eine Waschmaschinen-Vorlage muss erhalten bleiben.");
       return;
     }
 
-    if (!confirmAction(`Vorlage ${formatPresetLabel(presetMinutes)} wirklich löschen?`)) return;
+    const confirmed = await requestConfirm({
+      title: "Vorlage löschen",
+      message: `Vorlage ${formatPresetLabel(presetMinutes)} wirklich löschen?`,
+      confirmLabel: "Löschen",
+      tone: "danger"
+    });
+    if (!confirmed) return;
 
     dispatch({
       type: "UPDATE_SETTINGS",
@@ -877,6 +958,34 @@ function AppContent(): JSX.Element {
                 <button className="btn btn-tonal" onClick={() => setEditDraft(null)}>Abbrechen</button>
                 <button className="btn btn-primary" onClick={saveEditor}>Speichern</button>
               </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {confirmDialog ? (
+        <div
+          className="dialog-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-dialog-title"
+          onClick={() => closeConfirmDialog(false)}
+        >
+          <div className="dialog card confirm-dialog" onClick={(event) => event.stopPropagation()}>
+            <div className="section-head">
+              <h3 id="confirm-dialog-title">{confirmDialog.title}</h3>
+            </div>
+            <p className="confirm-dialog-message">{confirmDialog.message}</p>
+            <div className="quick-actions dialog-actions">
+              <button className="btn btn-tonal" onClick={() => closeConfirmDialog(false)}>
+                {confirmDialog.cancelLabel}
+              </button>
+              <button
+                className={`btn ${confirmDialog.tone === "danger" ? "btn-danger" : "btn-primary"}`}
+                onClick={() => closeConfirmDialog(true)}
+              >
+                {confirmDialog.confirmLabel}
+              </button>
             </div>
           </div>
         </div>

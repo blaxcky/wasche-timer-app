@@ -754,6 +754,16 @@ button:focus-visible {
   animation: dialog-up 180ms ease both;
 }
 
+.confirm-dialog {
+  max-width: 540px;
+}
+
+.confirm-dialog-message {
+  margin: 0;
+  color: #1e3443;
+  line-height: 1.42;
+}
+
 .dialog-actions {
   width: 100%;
   display: grid;
