@@ -15,7 +15,8 @@ type Action =
   | { type: "REPLACE_STATE"; payload: AppStateV2 }
   | { type: "ARCHIVE_TIMER"; payload: { id: string; reason: HistoryEntry["reason"] } }
   | { type: "RESTORE_HISTORY"; payload: { historyId: string } }
-  | { type: "ADD_TEMPLATE"; payload: { name: string; emoji: string; targetDurationSec?: number } };
+  | { type: "ADD_TEMPLATE"; payload: { name: string; emoji: string; targetDurationSec?: number } }
+  | { type: "DELETE_TEMPLATE"; payload: { id: string } };
 
 function reducer(state: AppStateV2, action: Action): AppStateV2 {
   switch (action.type) {
@@ -184,6 +185,13 @@ function reducer(state: AppStateV2, action: Action): AppStateV2 {
       return {
         ...state,
         templates: [...state.templates, template]
+      };
+    }
+
+    case "DELETE_TEMPLATE": {
+      return {
+        ...state,
+        templates: state.templates.filter((template) => template.id !== action.payload.id)
       };
     }
 

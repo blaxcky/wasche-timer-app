@@ -74,7 +74,6 @@ function AppContent(): JSX.Element {
   const now = useNow();
   const [tab, setTab] = useState<TabId>("dashboard");
   const [newTimerName, setNewTimerName] = useState("");
-  const [templateSelection, setTemplateSelection] = useState<string>(state.templates[0]?.id ?? "");
   const [machineMinutes, setMachineMinutes] = useState(state.washingMachine.presetMin.toString());
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
   const [newTemplateName, setNewTemplateName] = useState("");
@@ -86,12 +85,6 @@ function AppContent(): JSX.Element {
   useEffect(() => {
     setDefaultPresetInput(state.settings.defaultWashingPresetsMin.join(","));
   }, [state.settings.defaultWashingPresetsMin]);
-
-  useEffect(() => {
-    if (!templateSelection && state.templates.length > 0) {
-      setTemplateSelection(state.templates[0].id);
-    }
-  }, [state.templates, templateSelection]);
 
   useEffect(() => {
     const onBeforeInstallPrompt = (event: Event): void => {
@@ -142,8 +135,6 @@ function AppContent(): JSX.Element {
     return window.confirm(text);
   };
 
-  const selectedTemplate = state.templates.find((tpl) => tpl.id === templateSelection);
-
   const addTimer = (nameOverride?: string, templateOverride?: LaundryTemplate): void => {
     const name = (nameOverride ?? newTimerName).trim();
     if (!name) return;
@@ -152,7 +143,7 @@ function AppContent(): JSX.Element {
       type: "ADD_TIMER",
       payload: {
         name,
-        template: templateOverride ?? selectedTemplate
+        template: templateOverride
       }
     });
     setNewTimerName("");
@@ -307,6 +298,11 @@ function AppContent(): JSX.Element {
     setNewTemplateName("");
   };
 
+  const deleteTemplate = (templateId: string, templateName: string): void => {
+    if (!confirmAction(`Vorlage "${templateName}" wirklich löschen?`)) return;
+    dispatch({ type: "DELETE_TEMPLATE", payload: { id: templateId } });
+  };
+
   const applyDefaults = (): void => {
     const presets = parseMinutesInput(defaultPresetInput).sort((a, b) => a - b);
 
@@ -449,14 +445,14 @@ function AppContent(): JSX.Element {
                   {state.templates.map((template) => (
                     <button
                       key={template.id}
-                      className={`chip ${template.id === templateSelection ? "chip-active" : ""}`}
-                      onClick={() => setTemplateSelection(template.id)}
+                      className="chip"
+                      onClick={() => addTimer(template.name, template)}
                     >
                       <span>{template.emoji}</span> {template.name}
                     </button>
                   ))}
                 </div>
-                <button className="btn btn-primary" onClick={() => addTimer()}>Timer starten</button>
+                <button className="btn btn-primary" onClick={() => addTimer()}>Timer mit Name starten</button>
               </div>
             </article>
 
@@ -575,8 +571,25 @@ function AppContent(): JSX.Element {
                   placeholder="Name"
                 />
               </div>
-              <div className="quick-actions">
+              <div className="quick-actions template-save-actions">
                 <button className="btn btn-primary" onClick={addTemplate}>Vorlage speichern</button>
+              </div>
+              <div className="template-management-list">
+                {state.templates.length === 0 ? (
+                  <p className="muted">Keine Vorlagen vorhanden.</p>
+                ) : (
+                  state.templates.map((template) => (
+                    <div key={template.id} className="template-management-item">
+                      <span>{template.emoji} {template.name}</span>
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => deleteTemplate(template.id, template.name)}
+                      >
+                        Löschen
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
             </article>
 
