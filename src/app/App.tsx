@@ -11,7 +11,7 @@ const NAV_ITEMS: Array<{ id: TabId; label: string; icon: string }> = [
   { id: "settings", label: "Einstellungen", icon: "settings" }
 ];
 
-const HOUR_OPTIONS = Array.from({ length: 24 }, (_, value) => value);
+const HOUR_OPTIONS = Array.from({ length: 13 }, (_, value) => value);
 const MINUTE_OPTIONS = Array.from({ length: 12 }, (_, index) => index * 5);
 
 function formatPresetLabel(totalMinutes: number): string {
@@ -30,6 +30,10 @@ function splitPresetMinutes(totalMinutes: number): { hours: number; minutes: num
 function snapToFiveMinuteStep(value: number): number {
   const snapped = Math.round(value / 5) * 5;
   return Math.min(55, Math.max(0, snapped));
+}
+
+function clampDashboardHours(value: number): number {
+  return Math.min(12, Math.max(0, Math.floor(value)));
 }
 
 function parseHourMinutePreset(hoursInput: string, minutesInput: string): number | null {
@@ -106,7 +110,7 @@ function AppContent(): JSX.Element {
   const initialMachinePreset = splitPresetMinutes(state.washingMachine.presetMin);
   const [tab, setTab] = useState<TabId>("dashboard");
   const [newTimerName, setNewTimerName] = useState("");
-  const [machineHours, setMachineHours] = useState(initialMachinePreset.hours.toString());
+  const [machineHours, setMachineHours] = useState(clampDashboardHours(initialMachinePreset.hours).toString());
   const [machineInputMinutes, setMachineInputMinutes] = useState(
     snapToFiveMinuteStep(initialMachinePreset.minutes).toString()
   );
@@ -125,7 +129,7 @@ function AppContent(): JSX.Element {
   useEffect(() => {
     if (state.washingMachine.active) return;
     const preset = splitPresetMinutes(state.washingMachine.presetMin);
-    setMachineHours(preset.hours.toString());
+    setMachineHours(clampDashboardHours(preset.hours).toString());
     setMachineInputMinutes(snapToFiveMinuteStep(preset.minutes).toString());
   }, [state.washingMachine.active, state.washingMachine.presetMin]);
 
