@@ -706,7 +706,7 @@ function AppContent(): JSX.Element {
                 <h3>Wartung</h3>
               </div>
               <p className="muted">Setzt Service Worker und Browser-Cache zurück, ohne deine Timer-Daten zu löschen.</p>
-              <div className="quick-actions">
+              <div className="quick-actions maintenance-actions">
                 <button className="btn btn-tonal" onClick={resetRuntimeAndReload}>
                   App neu laden (Cache zurücksetzen)
                 </button>

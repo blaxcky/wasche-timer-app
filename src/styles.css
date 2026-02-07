@@ -226,6 +226,10 @@ button:focus-visible {
   gap: 0.5rem;
 }
 
+.maintenance-actions {
+  margin-top: 0.6rem;
+}
+
 .btn {
   border: none;
   border-radius: 12px;
