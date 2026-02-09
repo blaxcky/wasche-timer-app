@@ -36,9 +36,11 @@ export function formatDurationDaysHours(totalSeconds: number): string {
   const totalHours = Math.floor(safe / 3600);
   const days = Math.floor(totalHours / 24);
   const hours = totalHours % 24;
+  const minutesRoundedUp = safe > 0 ? Math.max(1, Math.ceil(safe / 60)) : 0;
 
   if (days > 0) return `${days}d ${hours}h`;
-  return `${totalHours}h`;
+  if (totalHours > 0) return `${totalHours}h`;
+  return `${minutesRoundedUp}m`;
 }
 
 function joinWithUnd(parts: string[]): string {
@@ -53,12 +55,13 @@ export function formatDurationDaysHoursWords(totalSeconds: number): string {
   const totalHours = Math.floor(safe / 3600);
   const days = Math.floor(totalHours / 24);
   const hours = totalHours % 24;
+  const minutesRoundedUp = safe > 0 ? Math.max(1, Math.ceil(safe / 60)) : 0;
   const parts: string[] = [];
 
   if (days > 0) parts.push(`${days} ${days === 1 ? "Tag" : "Tage"}`);
   if (totalHours > 0) parts.push(`${hours} ${hours === 1 ? "Stunde" : "Stunden"}`);
 
-  if (parts.length === 0) return "unter 1 Stunde";
+  if (parts.length === 0) return `${minutesRoundedUp} ${minutesRoundedUp === 1 ? "Minute" : "Minuten"}`;
   return joinWithUnd(parts.slice(0, 2));
 }
 
