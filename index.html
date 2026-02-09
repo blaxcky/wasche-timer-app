@@ -626,19 +626,6 @@
                 return parts.join(' ');
             };
 
-            const formatDaysHours = (totalSeconds) => {
-                if (totalSeconds < 0) totalSeconds = 0;
-
-                const days = Math.floor(totalSeconds / 86400);
-                const hours = Math.floor((totalSeconds % 86400) / 3600);
-
-                if (days > 0) {
-                    return `${days}d ${hours}h`;
-                }
-
-                return `${hours}h`;
-            };
-
             const sortedTimers = timers
                 .slice()
                 .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
@@ -722,7 +709,7 @@
                                     <span className={`text-sm font-mono font-bold ${
                                         isTargetReached ? 'text-green-700' : 'text-blue-600'
                                     }`}>
-                                        {formatDaysHours(currentElapsedTime)}
+                                        {formatTime(currentElapsedTime)}
                                     </span>
                                     {isTargetReached && (
                                         <span className="text-green-600 text-xs font-bold">✓ 3T</span>
@@ -741,7 +728,7 @@
                                         {Math.round(progressPercentage)}% - {
                                             isTargetReached 
                                                 ? 'Ziel erreicht!' 
-                                                : `Noch ${formatDaysHours(Math.max(0, targetSeconds - currentElapsedTime))}`
+                                                : `Noch ${formatTime(Math.max(0, targetSeconds - currentElapsedTime), false)}`
                                         }
                                     </div>
                                 </div>
