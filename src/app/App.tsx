@@ -2,7 +2,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AppStateProvider, useAppState } from "./state";
 import { buildBackupPayload, parseBackupPayload } from "../shared/storage/repository";
 import { resetAppRuntimeCaches } from "../shared/lib/pwa-reset";
-import { elapsedSeconds, formatDateTime, formatDuration, fromDatetimeLocalInput, toDatetimeLocalInput } from "../shared/lib/time";
+import {
+  elapsedSeconds,
+  formatDateTime,
+  formatDuration,
+  formatDurationDaysHours,
+  fromDatetimeLocalInput,
+  toDatetimeLocalInput
+} from "../shared/lib/time";
 import { TabId, LaundryTemplate, LaundryTimer } from "../shared/types/models";
 
 const NAV_ITEMS: Array<{ id: TabId; label: string; icon: string }> = [
@@ -663,7 +670,7 @@ function AppContent(): JSX.Element {
                       {runningTimerItems.slice(0, 4).map(({ timer, remaining }) => (
                         <li key={`running-${timer.id}`}>
                           <span className="overview-name">{timer.name}</span>
-                          <span className="overview-meta">Noch {formatDuration(remaining, false)}</span>
+                          <span className="overview-meta">Noch {formatDurationDaysHours(remaining)}</span>
                         </li>
                       ))}
                     </ul>
@@ -683,7 +690,7 @@ function AppContent(): JSX.Element {
                         <li key={`finished-${timer.id}`}>
                           <span className="overview-name">{timer.name}</span>
                           <span className="overview-meta">
-                            {overdue < 60 ? "Gerade fertig" : `Fertig seit ${formatDuration(overdue, false)}`}
+                            {overdue < 60 ? "Gerade fertig" : `Fertig seit ${formatDurationDaysHours(overdue)}`}
                           </span>
                         </li>
                       ))}
@@ -1006,4 +1013,3 @@ export default function App(): JSX.Element {
     </AppStateProvider>
   );
 }
-

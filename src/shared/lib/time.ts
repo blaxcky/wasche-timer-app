@@ -31,6 +31,16 @@ export function formatDuration(totalSeconds: number, withSeconds = true): string
   return "0m";
 }
 
+export function formatDurationDaysHours(totalSeconds: number): string {
+  const safe = Math.max(0, Math.floor(totalSeconds));
+  const totalHours = Math.floor(safe / 3600);
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+
+  if (days > 0) return `${days}d ${hours}h`;
+  return `${totalHours}h`;
+}
+
 export function formatDateTime(iso: string, locale = "de-DE"): string {
   const date = new Date(iso);
   return `${date.toLocaleDateString(locale, {
