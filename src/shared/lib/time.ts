@@ -31,11 +31,35 @@ export function formatDuration(totalSeconds: number, withSeconds = true): string
   return "0m";
 }
 
+export function formatDurationDaysHours(totalSeconds: number): string {
+  const safe = Math.max(0, Math.floor(totalSeconds));
+  const totalHours = Math.floor(safe / 3600);
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+
+  if (days > 0) return `${days}d ${hours}h`;
+  return `${totalHours}h`;
+}
+
 function joinWithUnd(parts: string[]): string {
   if (parts.length === 0) return "";
   if (parts.length === 1) return parts[0];
   if (parts.length === 2) return `${parts[0]} und ${parts[1]}`;
   return `${parts[0]}, ${parts[1]} und ${parts[2]}`;
+}
+
+export function formatDurationDaysHoursWords(totalSeconds: number): string {
+  const safe = Math.max(0, Math.floor(totalSeconds));
+  const totalHours = Math.floor(safe / 3600);
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+  const parts: string[] = [];
+
+  if (days > 0) parts.push(`${days} ${days === 1 ? "Tag" : "Tage"}`);
+  if (totalHours > 0) parts.push(`${hours} ${hours === 1 ? "Stunde" : "Stunden"}`);
+
+  if (parts.length === 0) return "unter 1 Stunde";
+  return joinWithUnd(parts.slice(0, 2));
 }
 
 export function formatDurationWords(totalSeconds: number): string {

@@ -6,6 +6,8 @@ import {
   elapsedSeconds,
   formatDateTime,
   formatDuration,
+  formatDurationDaysHours,
+  formatDurationDaysHoursWords,
   formatDurationWords,
   fromDatetimeLocalInput,
   toDatetimeLocalInput
@@ -670,7 +672,7 @@ function AppContent(): JSX.Element {
                       {runningTimerItems.slice(0, 4).map(({ timer, remaining }) => (
                         <li key={`running-${timer.id}`}>
                           <span className="overview-name">{timer.name}</span>
-                          <span className="overview-meta">Noch {formatDurationWords(remaining)}</span>
+                          <span className="overview-meta">Noch {formatDurationDaysHoursWords(remaining)}</span>
                         </li>
                       ))}
                     </ul>
@@ -762,8 +764,8 @@ function AppContent(): JSX.Element {
                         </span>
                       </div>
 
-                      <p className="big-timer">{formatDuration(elapsed)}</p>
-                      <p className="muted">{reached ? "Trocknungsziel ist erreicht." : `Noch ${formatDuration(remaining, false)}`}</p>
+                      <p className="big-timer">{formatDurationDaysHours(elapsed)}</p>
+                      <p className="muted">{reached ? "Trocknungsziel ist erreicht." : `Noch ${formatDurationDaysHours(remaining)}`}</p>
                       <div className="progress-track">
                         <div className="progress-bar" style={{ width: `${progress}%` }} />
                       </div>
