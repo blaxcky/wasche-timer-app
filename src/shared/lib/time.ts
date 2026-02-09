@@ -38,7 +38,7 @@ export function formatDurationDaysHours(totalSeconds: number): string {
   const hours = totalHours % 24;
   const minutesRoundedUp = safe > 0 ? Math.max(1, Math.ceil(safe / 60)) : 0;
 
-  if (days > 0) return `${days}d ${hours}h`;
+  if (days > 0) return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
   if (totalHours > 0) return `${totalHours}h`;
   return `${minutesRoundedUp}m`;
 }
@@ -59,7 +59,8 @@ export function formatDurationDaysHoursWords(totalSeconds: number): string {
   const parts: string[] = [];
 
   if (days > 0) parts.push(`${days} ${days === 1 ? "Tag" : "Tage"}`);
-  if (totalHours > 0) parts.push(`${hours} ${hours === 1 ? "Stunde" : "Stunden"}`);
+  if (days === 0 && totalHours > 0) parts.push(`${hours} ${hours === 1 ? "Stunde" : "Stunden"}`);
+  if (days > 0 && hours > 0) parts.push(`${hours} ${hours === 1 ? "Stunde" : "Stunden"}`);
 
   if (parts.length === 0) return `${minutesRoundedUp} ${minutesRoundedUp === 1 ? "Minute" : "Minuten"}`;
   return joinWithUnd(parts.slice(0, 2));

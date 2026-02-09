@@ -692,7 +692,7 @@ function AppContent(): JSX.Element {
                         <li key={`finished-${timer.id}`}>
                           <span className="overview-name">{timer.name}</span>
                           <span className="overview-meta">
-                            {overdue < 60 ? "Gerade fertig" : `Fertig seit ${formatDurationWords(overdue)}`}
+                            {overdue < 60 ? "Gerade fertig" : `Fertig seit ${formatDurationDaysHoursWords(overdue)}`}
                           </span>
                         </li>
                       ))}
