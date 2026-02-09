@@ -8,7 +8,6 @@ import {
   formatDuration,
   formatDurationDaysHours,
   formatDurationDaysHoursWords,
-  formatDurationWords,
   fromDatetimeLocalInput,
   toDatetimeLocalInput
 } from "../shared/lib/time";
