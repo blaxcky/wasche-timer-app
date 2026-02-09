@@ -31,14 +31,26 @@ export function formatDuration(totalSeconds: number, withSeconds = true): string
   return "0m";
 }
 
-export function formatDurationDaysHours(totalSeconds: number): string {
-  const safe = Math.max(0, Math.floor(totalSeconds));
-  const totalHours = Math.floor(safe / 3600);
-  const days = Math.floor(totalHours / 24);
-  const hours = totalHours % 24;
+function joinWithUnd(parts: string[]): string {
+  if (parts.length === 0) return "";
+  if (parts.length === 1) return parts[0];
+  if (parts.length === 2) return `${parts[0]} und ${parts[1]}`;
+  return `${parts[0]}, ${parts[1]} und ${parts[2]}`;
+}
 
-  if (days > 0) return `${days}d ${hours}h`;
-  return `${totalHours}h`;
+export function formatDurationWords(totalSeconds: number): string {
+  const safe = Math.max(0, Math.floor(totalSeconds));
+  const days = Math.floor(safe / 86400);
+  const hours = Math.floor((safe % 86400) / 3600);
+  const minutes = Math.floor((safe % 3600) / 60);
+  const parts: string[] = [];
+
+  if (days > 0) parts.push(`${days} ${days === 1 ? "Tag" : "Tage"}`);
+  if (hours > 0) parts.push(`${hours} ${hours === 1 ? "Stunde" : "Stunden"}`);
+  if (minutes > 0) parts.push(`${minutes} ${minutes === 1 ? "Minute" : "Minuten"}`);
+
+  if (parts.length === 0) return "0 Minuten";
+  return joinWithUnd(parts.slice(0, 3));
 }
 
 export function formatDateTime(iso: string, locale = "de-DE"): string {

@@ -6,7 +6,7 @@ import {
   elapsedSeconds,
   formatDateTime,
   formatDuration,
-  formatDurationDaysHours,
+  formatDurationWords,
   fromDatetimeLocalInput,
   toDatetimeLocalInput
 } from "../shared/lib/time";
@@ -670,7 +670,7 @@ function AppContent(): JSX.Element {
                       {runningTimerItems.slice(0, 4).map(({ timer, remaining }) => (
                         <li key={`running-${timer.id}`}>
                           <span className="overview-name">{timer.name}</span>
-                          <span className="overview-meta">Noch {formatDurationDaysHours(remaining)}</span>
+                          <span className="overview-meta">Noch {formatDurationWords(remaining)}</span>
                         </li>
                       ))}
                     </ul>
@@ -690,7 +690,7 @@ function AppContent(): JSX.Element {
                         <li key={`finished-${timer.id}`}>
                           <span className="overview-name">{timer.name}</span>
                           <span className="overview-meta">
-                            {overdue < 60 ? "Gerade fertig" : `Fertig seit ${formatDurationDaysHours(overdue)}`}
+                            {overdue < 60 ? "Gerade fertig" : `Fertig seit ${formatDurationWords(overdue)}`}
                           </span>
                         </li>
                       ))}
