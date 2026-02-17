@@ -119,7 +119,11 @@ export function sanitizeState(input: unknown): AppStateV2 {
       defaultWashingPresetsMin: sanitizePresetMinutes(
         data.settings?.defaultWashingPresetsMin,
         DEFAULT_SETTINGS.defaultWashingPresetsMin
-      )
+      ),
+      washingMachineWebhookUrl:
+        typeof data.settings?.washingMachineWebhookUrl === "string"
+          ? data.settings.washingMachineWebhookUrl.trim()
+          : DEFAULT_SETTINGS.washingMachineWebhookUrl
     },
     installedAt:
       typeof data.installedAt === "string" && !Number.isNaN(new Date(data.installedAt).getTime())
@@ -212,4 +216,3 @@ export function parseBackupPayload(raw: string): AppStateV2 {
 
   return sanitizeState(record.data);
 }
-

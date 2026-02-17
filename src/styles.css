@@ -867,6 +867,24 @@ button:focus-visible {
   accent-color: var(--primary);
 }
 
+.settings-input-field {
+  display: grid;
+  gap: 0.32rem;
+  margin-top: 0.62rem;
+}
+
+.settings-input-field span {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.webhook-hint {
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  line-height: 1.42;
+}
+
 .bottom-nav {
   position: fixed;
   left: 50%;

@@ -27,7 +27,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   locale: "de-DE",
   hapticsEnabled: true,
   confirmationsEnabled: true,
-  defaultWashingPresetsMin: [60, 90, 120, 170, 180]
+  defaultWashingPresetsMin: [60, 90, 120, 170, 180],
+  washingMachineWebhookUrl: ""
 };
 
 export function createDefaultState(nowIso: string): AppStateV2 {
@@ -46,4 +47,3 @@ export function createDefaultState(nowIso: string): AppStateV2 {
     updatedAt: nowIso
   };
 }
-

@@ -56,6 +56,38 @@ function parseHourMinutePreset(hoursInput: string, minutesInput: string): number
   return total > 0 ? total : null;
 }
 
+function normalizeHttpWebhookUrl(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
+function createWashingMachineScheduleId(endAtIso: string): string {
+  return `washing-machine-${endAtIso.replace(/[^0-9]/g, "")}`;
+}
+
+async function postJsonWebhook(url: string, payload: Record<string, unknown>): Promise<void> {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload),
+    keepalive: true
+  });
+
+  if (!response.ok) {
+    throw new Error(`Webhook returned ${response.status}`);
+  }
+}
+
 function useNow(): Date {
   const [now, setNow] = useState(() => new Date());
 
@@ -270,6 +302,20 @@ function AppContent(): JSX.Element {
     });
   };
 
+  const dispatchWashingMachineWebhook = (payload: Record<string, unknown>): void => {
+    const webhookUrl = normalizeHttpWebhookUrl(state.settings.washingMachineWebhookUrl);
+    if (!webhookUrl) {
+      if (state.settings.washingMachineWebhookUrl.trim()) {
+        window.alert("Webhook-URL ist ungültig. Bitte in den Einstellungen eine vollständige http(s)-URL eintragen.");
+      }
+      return;
+    }
+
+    void postJsonWebhook(webhookUrl, payload).catch((error) => {
+      console.error("Webhook konnte nicht gesendet werden.", error);
+    });
+  };
+
   useEffect(() => {
     if (!confirmDialog) return;
 
@@ -345,8 +391,25 @@ function AppContent(): JSX.Element {
   const startWashingMachine = (minutes: number): void => {
     if (state.washingMachine.active) return;
     if (!Number.isFinite(minutes) || minutes <= 0) return;
-    dispatch({ type: "START_WASHING_MACHINE", payload: { minutes: Math.floor(minutes) } });
+
+    const roundedMinutes = Math.floor(minutes);
+    const endAtIso = new Date(Date.now() + roundedMinutes * 60 * 1000).toISOString();
+    const scheduleId = createWashingMachineScheduleId(endAtIso);
+
+    dispatch({ type: "START_WASHING_MACHINE", payload: { minutes: roundedMinutes, endAt: endAtIso } });
     triggerHaptics(state.settings.hapticsEnabled);
+
+    dispatchWashingMachineWebhook({
+      event: "washing_machine_schedule",
+      scheduleId,
+      createdAt: new Date().toISOString(),
+      dueAt: endAtIso,
+      durationMinutes: roundedMinutes,
+      timerName: "Waschmaschine",
+      message: "Die Waeche ist fertig.",
+      locale: state.settings.locale,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    });
   };
 
   const startCustomWashingMachine = (): void => {
@@ -367,7 +430,16 @@ function AppContent(): JSX.Element {
       tone: "default"
     });
     if (!confirmed) return;
+
+    const activeEndAt = state.washingMachine.endAt;
     dispatch({ type: "STOP_WASHING_MACHINE" });
+    if (!activeEndAt) return;
+
+    dispatchWashingMachineWebhook({
+      event: "washing_machine_cancel",
+      scheduleId: createWashingMachineScheduleId(activeEndAt),
+      cancelledAt: new Date().toISOString()
+    });
   };
 
   const exportBackup = async (): Promise<void> => {
@@ -833,6 +905,28 @@ function AppContent(): JSX.Element {
                 />
               </label>
 
+              <label className="settings-input-field">
+                <span>Webhook-URL (Pipedream)</span>
+                <input
+                  type="url"
+                  inputMode="url"
+                  placeholder="https://eo...m.pipedream.net"
+                  value={state.settings.washingMachineWebhookUrl}
+                  onChange={(event) =>
+                    dispatch({
+                      type: "UPDATE_SETTINGS",
+                      payload: { washingMachineWebhookUrl: event.target.value }
+                    })
+                  }
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                />
+              </label>
+
+              <p className="muted webhook-hint">
+                Beim Start wird ein Webhook mit Endzeit gesendet, beim Stopp ein Cancel-Webhook mit derselben scheduleId.
+              </p>
               <p className="muted">Waschmaschinen-Vorlagen verwaltest du im nächsten Abschnitt mit Stunden und Minuten.</p>
             </article>
 

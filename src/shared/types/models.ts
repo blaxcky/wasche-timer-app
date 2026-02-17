@@ -40,6 +40,7 @@ export interface AppSettings {
   hapticsEnabled: boolean;
   confirmationsEnabled: boolean;
   defaultWashingPresetsMin: number[];
+  washingMachineWebhookUrl: string;
 }
 
 export interface AppStateV2 {

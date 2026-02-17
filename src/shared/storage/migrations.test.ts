@@ -72,7 +72,8 @@ describe("storage migrations", () => {
         locale: "de-DE",
         hapticsEnabled: true,
         confirmationsEnabled: true,
-        defaultWashingPresetsMin: [60, 90, 120]
+        defaultWashingPresetsMin: [60, 90, 120],
+        washingMachineWebhookUrl: " https://eo123.m.pipedream.net "
       },
       installedAt: "2026-02-01T00:00:00.000Z",
       updatedAt: "2026-02-01T00:00:00.000Z"
@@ -82,6 +83,26 @@ describe("storage migrations", () => {
     const loaded = loadState(storage);
     expect(loaded.schemaVersion).toBe(2);
     expect(loaded.settings.defaultWashingPresetsMin).toEqual([60, 90, 120]);
+    expect(loaded.settings.washingMachineWebhookUrl).toBe("https://eo123.m.pipedream.net/");
+  });
+
+  it("defaults webhook URL to empty string when missing", () => {
+    const sanitized = sanitizeState({
+      schemaVersion: 2,
+      timers: [],
+      history: [],
+      templates: [],
+      washingMachine: { active: false, endAt: null, presetMin: 170 },
+      settings: {
+        locale: "de-DE",
+        hapticsEnabled: true,
+        confirmationsEnabled: true,
+        defaultWashingPresetsMin: [60]
+      },
+      installedAt: "2026-02-01T00:00:00.000Z",
+      updatedAt: "2026-02-01T00:00:00.000Z"
+    });
+
+    expect(sanitized.settings.washingMachineWebhookUrl).toBe("");
   });
 });
-

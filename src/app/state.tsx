@@ -9,7 +9,7 @@ type Action =
   | { type: "UPDATE_TIMER"; payload: { id: string; name: string; startAt: string } }
   | { type: "DELETE_TIMER"; payload: { id: string; archiveReason?: HistoryEntry["reason"] } }
   | { type: "SET_TIMER_STATUS"; payload: { id: string; status: LaundryTimer["status"] } }
-  | { type: "START_WASHING_MACHINE"; payload: { minutes: number } }
+  | { type: "START_WASHING_MACHINE"; payload: { minutes: number; endAt: string } }
   | { type: "STOP_WASHING_MACHINE" }
   | { type: "UPDATE_SETTINGS"; payload: Partial<AppStateV2["settings"]> }
   | { type: "REPLACE_STATE"; payload: AppStateV2 }
@@ -106,7 +106,10 @@ function reducer(state: AppStateV2, action: Action): AppStateV2 {
 
     case "START_WASHING_MACHINE": {
       const mins = Math.max(1, Math.floor(action.payload.minutes));
-      const endAt = new Date(Date.now() + mins * 60 * 1000).toISOString();
+      const parsedEndAt = new Date(action.payload.endAt);
+      const endAt = Number.isNaN(parsedEndAt.getTime())
+        ? new Date(Date.now() + mins * 60 * 1000).toISOString()
+        : parsedEndAt.toISOString();
 
       return {
         ...state,
@@ -145,7 +148,9 @@ function reducer(state: AppStateV2, action: Action): AppStateV2 {
             .map((value) => Math.floor(value))
                 .filter((value) => value > 0)
             )
-          ).sort((a, b) => a - b)
+          ).sort((a, b) => a - b),
+          washingMachineWebhookUrl:
+            typeof merged.washingMachineWebhookUrl === "string" ? merged.washingMachineWebhookUrl.trim() : ""
         }
       };
     }
