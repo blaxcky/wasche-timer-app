@@ -73,6 +73,24 @@ function createWashingMachineScheduleId(endAtIso: string): string {
   return `washing-machine-${endAtIso.replace(/[^0-9]/g, "")}`;
 }
 
+function formatFinishedOverviewSince(totalSeconds: number): string {
+  const safe = Math.max(0, Math.floor(totalSeconds));
+  if (safe < 60) return "Gerade fertig";
+
+  if (safe < 3600) {
+    const minutes = Math.max(1, Math.ceil(safe / 60));
+    return `Fertig seit ${minutes} ${minutes === 1 ? "Minute" : "Minuten"}`;
+  }
+
+  const totalHours = Math.floor(safe / 3600);
+  if (totalHours < 24) {
+    return `Fertig seit ${totalHours} ${totalHours === 1 ? "Stunde" : "Stunden"}`;
+  }
+
+  const days = Math.floor(totalHours / 24);
+  return `Fertig seit ${days} ${days === 1 ? "Tag" : "Tage"}`;
+}
+
 async function postJsonWebhook(url: string, payload: Record<string, unknown>): Promise<void> {
   const response = await fetch(url, {
     method: "POST",
@@ -810,9 +828,7 @@ function AppContent(): JSX.Element {
                       {finishedTimerItems.slice(0, 4).map(({ timer, overdue }) => (
                         <li key={`finished-${timer.id}`}>
                           <span className="overview-name">{timer.name}</span>
-                          <span className="overview-meta">
-                            {overdue < 60 ? "Gerade fertig" : `Fertig seit ${formatDurationDaysHoursWords(overdue)}`}
-                          </span>
+                          <span className="overview-meta">{formatFinishedOverviewSince(overdue)}</span>
                         </li>
                       ))}
                     </ul>
