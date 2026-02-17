@@ -302,18 +302,57 @@ function AppContent(): JSX.Element {
     });
   };
 
-  const dispatchWashingMachineWebhook = (payload: Record<string, unknown>): void => {
+  const resolveWashingMachineWebhookUrl = (notifyOnInvalid: boolean): string | null => {
     const webhookUrl = normalizeHttpWebhookUrl(state.settings.washingMachineWebhookUrl);
     if (!webhookUrl) {
-      if (state.settings.washingMachineWebhookUrl.trim()) {
+      if (notifyOnInvalid && state.settings.washingMachineWebhookUrl.trim()) {
         window.alert("Webhook-URL ist ungültig. Bitte in den Einstellungen eine vollständige http(s)-URL eintragen.");
       }
-      return;
+      return null;
     }
 
-    void postJsonWebhook(webhookUrl, payload).catch((error) => {
+    return webhookUrl;
+  };
+
+  const sendWashingMachineWebhook = async (payload: Record<string, unknown>, notifyOnInvalid = true): Promise<boolean> => {
+    const webhookUrl = resolveWashingMachineWebhookUrl(notifyOnInvalid);
+    if (!webhookUrl) return false;
+    await postJsonWebhook(webhookUrl, payload);
+    return true;
+  };
+
+  const dispatchWashingMachineWebhook = (payload: Record<string, unknown>): void => {
+    void sendWashingMachineWebhook(payload).catch((error) => {
       console.error("Webhook konnte nicht gesendet werden.", error);
     });
+  };
+
+  const testWashingMachineWebhook = async (): Promise<void> => {
+    const nowIso = new Date().toISOString();
+
+    try {
+      const sent = await sendWashingMachineWebhook(
+        {
+          event: "washing_machine_schedule",
+          scheduleId: `washing-machine-test-${Date.now()}`,
+          createdAt: nowIso,
+          dueAt: nowIso,
+          durationMinutes: 0,
+          timerName: "Waschmaschine",
+          message: "Webhook-Test aus der App.",
+          locale: state.settings.locale,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          source: "manual_test_button"
+        },
+        true
+      );
+
+      if (!sent) return;
+      window.alert("Test-Webhook wurde gesendet.");
+    } catch (error) {
+      console.error("Test-Webhook konnte nicht gesendet werden.", error);
+      window.alert("Test-Webhook fehlgeschlagen. Bitte URL und Pipedream-Workflow prüfen.");
+    }
   };
 
   useEffect(() => {
@@ -923,6 +962,16 @@ function AppContent(): JSX.Element {
                   spellCheck={false}
                 />
               </label>
+
+              <div className="quick-actions webhook-test-actions">
+                <button
+                  className="btn btn-tonal"
+                  onClick={testWashingMachineWebhook}
+                  disabled={state.settings.washingMachineWebhookUrl.trim().length === 0}
+                >
+                  Webhook testen
+                </button>
+              </div>
 
               <p className="muted webhook-hint">
                 Beim Start wird ein Webhook mit Endzeit gesendet, beim Stopp ein Cancel-Webhook mit derselben scheduleId.
