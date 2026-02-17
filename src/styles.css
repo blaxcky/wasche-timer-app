@@ -662,32 +662,39 @@ button:focus-visible {
 .machine-inline-controls {
   margin-top: 0.62rem;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, auto)) minmax(92px, 1fr);
+  grid-template-columns: repeat(2, minmax(86px, 1fr)) minmax(92px, 1fr);
   align-items: center;
   gap: 0.46rem;
   justify-content: start;
 }
 
 .machine-inline-field {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.28rem;
+  position: relative;
+  display: block;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: var(--surface);
-  min-height: 40px;
-  padding: 0.4rem 0.52rem;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  min-height: 42px;
+  overflow: hidden;
+}
+
+.machine-inline-field:focus-within {
+  border-color: #81b8d0;
+  box-shadow: 0 0 0 2px rgba(42, 137, 173, 0.16);
 }
 
 .machine-inline-field select {
-  width: 4.2ch;
-  min-height: 0;
+  width: 100%;
+  min-height: 42px;
   border: none;
-  padding: 0;
-  text-align: right;
+  padding: 0.5rem 1.7rem 0.5rem 0.72rem;
+  text-align: center;
   background: transparent;
-  font-weight: 700;
+  font-weight: 800;
+  font-size: 0.96rem;
   appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
 }
 
 .machine-inline-field select:focus {
@@ -695,9 +702,14 @@ button:focus-visible {
 }
 
 .machine-inline-field span {
+  position: absolute;
+  right: 0.56rem;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--muted);
   font-size: 0.8rem;
   font-weight: 700;
+  pointer-events: none;
 }
 
 .machine-inline-field select:disabled {
