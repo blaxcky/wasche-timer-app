@@ -215,12 +215,16 @@ function AppContent(): JSX.Element {
   }, [now, state.washingMachine]);
 
   const washingDurationSec = state.washingMachine.presetMin * 60;
-  const washingProgress = state.washingMachine.active
+  const washingProgress = state.washingMachine.active && washingDurationSec > 0
     ? Math.min(100, Math.max(0, Math.round(((washingDurationSec - washingRemaining) / washingDurationSec) * 100)))
     : 0;
 
   const washingEndDate = state.washingMachine.endAt ? new Date(state.washingMachine.endAt) : null;
   const isWashingDone = state.washingMachine.active && washingEndDate !== null && now.getTime() >= washingEndDate.getTime();
+  const washingUrgent = state.washingMachine.active && !isWashingDone && washingRemaining <= 10 * 60;
+  const machineState = isWashingDone ? "done" : washingUrgent ? "warning" : state.washingMachine.active ? "running" : "idle";
+  const machineProgress = isWashingDone ? 100 : washingProgress;
+  const machineProgressColor = isWashingDone ? "#33a05e" : washingUrgent ? "#e38a2b" : "#1a8fb9";
 
   useEffect(() => {
     if (isWashingDone && !washingDoneRef.current) {
@@ -574,84 +578,89 @@ function AppContent(): JSX.Element {
               </article>
             </div>
 
-            <article className="card machine-card">
+            <article className={`card machine-card machine-card-${machineState}`}>
               <div className="section-head">
                 <h3>Waschmaschine</h3>
-                {state.washingMachine.active ? (
-                  <button className="btn btn-text" onClick={stopWashingMachine}>Stopp</button>
-                ) : null}
+                <span className={`machine-status-pill machine-status-pill-${machineState}`}>
+                  {machineState === "done"
+                    ? "Fertig"
+                    : machineState === "warning"
+                      ? "Fast fertig"
+                      : machineState === "running"
+                        ? "Läuft"
+                        : "Bereit"}
+                </span>
               </div>
 
               {state.washingMachine.active && washingEndDate ? (
                 <>
-                  <p className="big-timer machine-big-timer">{isWashingDone ? "Fertig" : formatDuration(washingRemaining)}</p>
+                  <div
+                    className="machine-ring"
+                    style={{
+                      background: `conic-gradient(${machineProgressColor} ${machineProgress}%, #dce8f1 ${machineProgress}% 100%)`
+                    }}
+                  >
+                    <div className="machine-ring-inner">
+                      <p className="machine-ring-label">Restzeit</p>
+                      <p className="big-timer machine-big-timer">{isWashingDone ? "Fertig" : formatDuration(washingRemaining)}</p>
+                    </div>
+                  </div>
                   <p className="muted machine-end-time">
                     Ende: {washingEndDate.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr
                   </p>
-                  <div className="progress-track">
-                    <div className="progress-bar" style={{ width: `${washingProgress}%` }} />
-                  </div>
+                  <p className="machine-progress-text">{machineProgress}% abgeschlossen</p>
+                  <button className="btn btn-text machine-stop-btn" onClick={stopWashingMachine}>Stopp</button>
                 </>
               ) : (
-                <p className="muted">Kein Waschmaschinen-Timer aktiv.</p>
+                <>
+                  <p className="muted">Kein Waschmaschinen-Timer aktiv.</p>
+                  <div className="washing-presets machine-presets">
+                    {state.settings.defaultWashingPresetsMin.map((value) => (
+                      <button
+                        key={value}
+                        className={`preset-chip ${value === state.washingMachine.presetMin ? "preset-chip-active" : ""}`}
+                        onClick={() => startWashingMachine(value)}
+                      >
+                        {formatPresetLabel(value)}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="machine-inline-controls">
+                    <label className="machine-inline-field">
+                      <select
+                        value={machineHours}
+                        onChange={(event) => setMachineHours(event.target.value)}
+                        aria-label="Stunden"
+                      >
+                        {HOUR_OPTIONS.map((value) => (
+                          <option key={`hour-${value}`} value={value.toString()}>
+                            {value.toString().padStart(2, "0")}
+                          </option>
+                        ))}
+                      </select>
+                      <span>h</span>
+                    </label>
+                    <label className="machine-inline-field">
+                      <select
+                        value={machineInputMinutes}
+                        onChange={(event) => setMachineInputMinutes(event.target.value)}
+                        aria-label="Minuten"
+                      >
+                        {MINUTE_OPTIONS.map((value) => (
+                          <option key={`minute-${value}`} value={value.toString()}>
+                            {value.toString().padStart(2, "0")}
+                          </option>
+                        ))}
+                      </select>
+                      <span>m</span>
+                    </label>
+                    <button className="btn btn-primary machine-start-btn" onClick={startCustomWashingMachine}>
+                      Start
+                    </button>
+                  </div>
+                </>
               )}
-
-              {state.washingMachine.active ? (
-                <p className="muted machine-lock-hint">Neuen Waschmaschinen-Timer erst nach Stopp starten.</p>
-              ) : null}
-
-              <div className="washing-presets machine-presets">
-                {state.settings.defaultWashingPresetsMin.map((value) => (
-                  <button
-                    key={value}
-                    className={`preset-chip ${state.washingMachine.active && value === state.washingMachine.presetMin ? "preset-chip-active" : ""}`}
-                    onClick={() => startWashingMachine(value)}
-                    disabled={state.washingMachine.active}
-                  >
-                    {formatPresetLabel(value)}
-                  </button>
-                ))}
-              </div>
-
-              <div className="machine-inline-controls">
-                <label className={`machine-inline-field ${state.washingMachine.active ? "machine-inline-field-disabled" : ""}`}>
-                  <select
-                    value={machineHours}
-                    onChange={(event) => setMachineHours(event.target.value)}
-                    aria-label="Stunden"
-                    disabled={state.washingMachine.active}
-                  >
-                    {HOUR_OPTIONS.map((value) => (
-                      <option key={`hour-${value}`} value={value.toString()}>
-                        {value.toString().padStart(2, "0")}
-                      </option>
-                    ))}
-                  </select>
-                  <span>h</span>
-                </label>
-                <label className={`machine-inline-field ${state.washingMachine.active ? "machine-inline-field-disabled" : ""}`}>
-                  <select
-                    value={machineInputMinutes}
-                    onChange={(event) => setMachineInputMinutes(event.target.value)}
-                    aria-label="Minuten"
-                    disabled={state.washingMachine.active}
-                  >
-                    {MINUTE_OPTIONS.map((value) => (
-                      <option key={`minute-${value}`} value={value.toString()}>
-                        {value.toString().padStart(2, "0")}
-                      </option>
-                    ))}
-                  </select>
-                  <span>m</span>
-                </label>
-                <button
-                  className="btn btn-primary machine-start-btn"
-                  onClick={startCustomWashingMachine}
-                  disabled={state.washingMachine.active}
-                >
-                  Start
-                </button>
-              </div>
             </article>
 
             <article className="card">

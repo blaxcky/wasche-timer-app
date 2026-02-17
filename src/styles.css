@@ -332,27 +332,131 @@ button:focus-visible {
 }
 
 .machine-card {
-  padding: 0.92rem;
+  padding: 1rem;
+  display: grid;
+  gap: 0.65rem;
+  border-color: rgba(13, 95, 127, 0.15);
+  background: linear-gradient(165deg, #f8fcff, #f3f8fd);
+}
+
+.machine-card .section-head {
+  margin-bottom: 0.1rem;
 }
 
 .machine-big-timer {
-  font-size: 1.48rem;
-  line-height: 1.08;
+  font-size: clamp(1.35rem, 4.2vw, 1.95rem);
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.machine-card-idle {
+  background: linear-gradient(160deg, #f8fcff, #f1f7fc);
+}
+
+.machine-card-running {
+  background: linear-gradient(160deg, #f6fcff, #eef7fd);
+}
+
+.machine-card-warning {
+  background: linear-gradient(160deg, #fff8f2, #fff3e8);
+}
+
+.machine-card-done {
+  background: linear-gradient(160deg, #f4fbf6, #edf8f1);
+}
+
+.machine-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 0.2rem 0.62rem;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.machine-status-pill-idle {
+  background: #e5edf4;
+  color: #395565;
+}
+
+.machine-status-pill-running {
+  background: #d8edf6;
+  color: #0f5471;
+}
+
+.machine-status-pill-warning {
+  background: #ffe5c9;
+  color: #915315;
+}
+
+.machine-status-pill-done {
+  background: #dbf0e2;
+  color: #20693c;
+}
+
+.machine-ring {
+  width: min(240px, 84%);
+  aspect-ratio: 1 / 1;
+  margin: 0.1rem auto 0;
+  border-radius: 50%;
+  padding: 11px;
+  display: grid;
+  place-items: center;
+  transition: background 220ms ease;
+}
+
+.machine-ring-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(9, 57, 80, 0.08);
+  box-shadow: inset 0 4px 12px rgba(9, 57, 80, 0.08);
+  display: grid;
+  place-content: center;
+  gap: 0.2rem;
+  text-align: center;
+}
+
+.machine-ring-label {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .machine-end-time {
-  margin-top: 0.16rem;
-  font-size: 0.82rem;
+  margin-top: 0.05rem;
+  font-size: 0.86rem;
+  text-align: center;
 }
 
-.machine-card .progress-track {
-  margin-top: 0.42rem;
-  height: 8px;
+.machine-progress-text {
+  margin: 0;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
 }
 
-.machine-lock-hint {
-  margin-top: 0.4rem;
-  font-size: 0.78rem;
+.machine-stop-btn {
+  width: 100%;
+  margin-top: 0.2rem;
+  min-height: 42px;
+}
+
+.machine-card-warning .machine-ring {
+  animation: machine-ring-pulse 1.8s ease-in-out infinite;
+}
+
+.machine-card-done .machine-progress-text {
+  color: var(--success);
 }
 
 .inline-form {
@@ -493,8 +597,10 @@ button:focus-visible {
 }
 
 .machine-presets {
-  margin-top: 0.62rem;
-  gap: 0.42rem;
+  margin-top: 0.55rem;
+  gap: 0.44rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .preset-chip {
@@ -509,9 +615,11 @@ button:focus-visible {
 }
 
 .machine-presets .preset-chip {
-  min-height: 34px;
-  padding: 0.34rem 0.64rem;
-  font-size: 0.81rem;
+  min-height: 40px;
+  padding: 0.4rem 0.45rem;
+  font-size: 0.8rem;
+  text-align: center;
+  border-radius: 12px;
 }
 
 .preset-chip:disabled {
@@ -553,10 +661,11 @@ button:focus-visible {
 
 .machine-inline-controls {
   margin-top: 0.62rem;
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, auto)) minmax(92px, 1fr);
   align-items: center;
   gap: 0.46rem;
-  flex-wrap: nowrap;
+  justify-content: start;
 }
 
 .machine-inline-field {
@@ -591,10 +700,6 @@ button:focus-visible {
   font-weight: 700;
 }
 
-.machine-inline-field-disabled {
-  background: #f1f5f9;
-}
-
 .machine-inline-field select:disabled {
   color: var(--muted);
   cursor: not-allowed;
@@ -602,7 +707,6 @@ button:focus-visible {
 
 .machine-start-btn {
   min-height: 40px;
-  margin-left: auto;
   white-space: nowrap;
 }
 
@@ -854,6 +958,16 @@ button:focus-visible {
   }
 }
 
+@keyframes machine-ring-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(227, 138, 43, 0.22);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(227, 138, 43, 0);
+  }
+}
+
 @media (max-width: 560px) {
   .inline-form {
     grid-template-columns: 1fr;
@@ -872,10 +986,15 @@ button:focus-visible {
   }
 
   .machine-inline-controls {
+    grid-template-columns: 1fr 1fr;
     gap: 0.38rem;
   }
 
   .machine-start-btn {
-    margin-left: 0;
+    grid-column: 1 / -1;
+  }
+
+  .machine-presets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
