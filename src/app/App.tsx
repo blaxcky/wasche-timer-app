@@ -445,7 +445,7 @@ function AppContent(): JSX.Element {
       dueAt: endAtIso,
       durationMinutes: roundedMinutes,
       timerName: "Waschmaschine",
-      message: "Die Waeche ist fertig.",
+      message: "Die Wäsche ist fertig.",
       locale: state.settings.locale,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
     });
