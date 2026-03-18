@@ -480,17 +480,21 @@ function AppContent(): JSX.Element {
   };
 
   const stopWashingMachine = async (): Promise<void> => {
-    const confirmed = await requestConfirm({
-      title: "Waschmaschine stoppen",
-      message: "Den laufenden Waschmaschinen-Timer jetzt stoppen?",
-      confirmLabel: "Stoppen",
-      tone: "default"
-    });
-    if (!confirmed) return;
-
     const activeEndAt = state.washingMachine.endAt;
+    const shouldSendCancelWebhook = !isWashingDone;
+
+    if (shouldSendCancelWebhook) {
+      const confirmed = await requestConfirm({
+        title: "Waschmaschine stoppen",
+        message: "Den laufenden Waschmaschinen-Timer jetzt stoppen?",
+        confirmLabel: "Stoppen",
+        tone: "default"
+      });
+      if (!confirmed) return;
+    }
+
     dispatch({ type: "STOP_WASHING_MACHINE" });
-    if (!activeEndAt) return;
+    if (!shouldSendCancelWebhook || !activeEndAt) return;
 
     dispatchWashingMachineWebhook({
       event: "washing_machine_cancel",
@@ -738,7 +742,9 @@ function AppContent(): JSX.Element {
                     Ende: {washingEndDate.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr
                   </p>
                   <p className="machine-progress-text">{machineProgress}% abgeschlossen</p>
-                  <button className="btn btn-text machine-stop-btn" onClick={stopWashingMachine}>Stopp</button>
+                  <button className="btn btn-text machine-stop-btn" onClick={stopWashingMachine}>
+                    {isWashingDone ? "OK" : "Stopp"}
+                  </button>
                 </>
               ) : (
                 <>
