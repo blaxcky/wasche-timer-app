@@ -435,7 +435,11 @@
                         name: newLoadName,
                         startTime: new Date()
                     };
-                    setTimers([...timers, newTimer]);
+                    const trimmedName = newLoadName.trim().toLowerCase();
+                    setTimers(prev => [
+                        ...prev.filter(t => t.name.trim().toLowerCase() !== trimmedName),
+                        newTimer
+                    ]);
                     setNewLoadName('');
                 }
             };
