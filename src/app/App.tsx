@@ -185,6 +185,27 @@ function AppContent(): JSX.Element {
   const confirmResolveRef = useRef<((result: boolean) => void) | null>(null);
 
   useEffect(() => {
+    const root = document.documentElement;
+
+    const updateAppHeight = (): void => {
+      const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+      root.style.setProperty("--app-height", `${Math.round(viewportHeight)}px`);
+    };
+
+    updateAppHeight();
+
+    window.addEventListener("resize", updateAppHeight);
+    window.addEventListener("orientationchange", updateAppHeight);
+    window.visualViewport?.addEventListener("resize", updateAppHeight);
+
+    return () => {
+      window.removeEventListener("resize", updateAppHeight);
+      window.removeEventListener("orientationchange", updateAppHeight);
+      window.visualViewport?.removeEventListener("resize", updateAppHeight);
+    };
+  }, []);
+
+  useEffect(() => {
     if (state.washingMachine.active) return;
     const preset = splitPresetMinutes(state.washingMachine.presetMin);
     setMachineHours(clampDashboardHours(preset.hours).toString());

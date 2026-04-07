@@ -1,6 +1,7 @@
 :root {
   color-scheme: light;
   font-family: "Manrope", "Segoe UI", "Roboto", sans-serif;
+  --app-height: 100vh;
   --bg: #f4f7fb;
   --surface: #ffffff;
   --surface-tonal: #e4f5fb;
@@ -60,13 +61,16 @@ button:focus-visible {
 
 .app-root {
   position: relative;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   max-width: 720px;
   margin: 0 auto;
   min-height: 100vh;
-  min-height: 100dvh;
-  height: 100dvh;
+  min-height: 100svh;
+  min-height: var(--app-height, 100svh);
+  height: 100vh;
+  height: 100svh;
+  height: var(--app-height, 100svh);
   overflow: hidden;
   padding: 0.85rem 1rem 0;
 }
@@ -106,7 +110,6 @@ button:focus-visible {
 }
 
 .main-pane {
-  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior-y: contain;
