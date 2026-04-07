@@ -18,7 +18,34 @@ type Action =
   | { type: "ADD_TEMPLATE"; payload: { name: string; emoji: string; targetDurationSec?: number } }
   | { type: "DELETE_TEMPLATE"; payload: { id: string } };
 
-function reducer(state: AppStateV2, action: Action): AppStateV2 {
+function normalizeTimerName(name: string): string {
+  return name.trim().toLocaleLowerCase();
+}
+
+function replaceTimerWithUniqueName(
+  timers: LaundryTimer[],
+  nextTimer: LaundryTimer,
+  insertPosition: "append" | "prepend" = "append"
+): LaundryTimer[] {
+  const normalizedName = normalizeTimerName(nextTimer.name);
+  const existingIndex = timers.findIndex((timer) => timer.id === nextTimer.id);
+  const withoutConflicts = timers.filter(
+    (timer) => timer.id !== nextTimer.id && normalizeTimerName(timer.name) !== normalizedName
+  );
+
+  if (insertPosition === "prepend") {
+    return [nextTimer, ...withoutConflicts];
+  }
+
+  if (existingIndex === -1) {
+    return [...withoutConflicts, nextTimer];
+  }
+
+  const insertAt = Math.min(existingIndex, withoutConflicts.length);
+  return [...withoutConflicts.slice(0, insertAt), nextTimer, ...withoutConflicts.slice(insertAt)];
+}
+
+export function reducer(state: AppStateV2, action: Action): AppStateV2 {
   switch (action.type) {
     case "ADD_TIMER": {
       const trimmed = action.payload.name.trim();
@@ -34,21 +61,23 @@ function reducer(state: AppStateV2, action: Action): AppStateV2 {
         status: "active"
       };
 
-      return { ...state, timers: [...state.timers, timer] };
+      return { ...state, timers: replaceTimerWithUniqueName(state.timers, timer) };
     }
 
     case "UPDATE_TIMER": {
       const { id, name, startAt } = action.payload;
+      const current = state.timers.find((timer) => timer.id === id);
+      if (!current) return state;
+
+      const updatedTimer: LaundryTimer = {
+        ...current,
+        name: name.trim() || current.name,
+        startAt: new Date(startAt).toISOString()
+      };
+
       return {
         ...state,
-        timers: state.timers.map((timer) => {
-          if (timer.id !== id) return timer;
-          return {
-            ...timer,
-            name: name.trim() || timer.name,
-            startAt: new Date(startAt).toISOString()
-          };
-        })
+        timers: replaceTimerWithUniqueName(state.timers, updatedTimer)
       };
     }
 
@@ -171,7 +200,7 @@ function reducer(state: AppStateV2, action: Action): AppStateV2 {
 
       return {
         ...state,
-        timers: [restored, ...state.timers],
+        timers: replaceTimerWithUniqueName(state.timers, restored, "prepend"),
         history: state.history.filter((item) => item.id !== action.payload.historyId)
       };
     }
