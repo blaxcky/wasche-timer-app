@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppStateProvider, findConflictingTimerByName, useAppState } from "./state";
 import { buildBackupPayload, parseBackupPayload } from "../shared/storage/repository";
+import { parseAppShortcutAction, stripAppShortcutParam, WASHING_MACHINE_THREE_HOURS_SHORTCUT } from "../shared/lib/app-shortcuts";
 import { resetAppRuntimeCaches } from "../shared/lib/pwa-reset";
 import {
   elapsedSeconds,
@@ -180,6 +181,7 @@ function AppContent(): JSX.Element {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null);
   const washingDoneRef = useRef(false);
+  const launchShortcutHandledRef = useRef(false);
   const templateRowRef = useRef<HTMLDivElement | null>(null);
   const [templateRowScrollable, setTemplateRowScrollable] = useState(false);
   const confirmResolveRef = useRef<((result: boolean) => void) | null>(null);
@@ -534,6 +536,26 @@ function AppContent(): JSX.Element {
       cancelledAt: new Date().toISOString()
     });
   };
+
+  useEffect(() => {
+    const action = parseAppShortcutAction(window.location.href);
+    if (!action) return;
+
+    const cleanedUrl = stripAppShortcutParam(window.location.href);
+    if (cleanedUrl) {
+      window.history.replaceState(window.history.state, "", cleanedUrl);
+    }
+
+    if (launchShortcutHandledRef.current) return;
+    launchShortcutHandledRef.current = true;
+
+    if (state.washingMachine.active) return;
+
+    if (action === WASHING_MACHINE_THREE_HOURS_SHORTCUT) {
+      setTab("dashboard");
+      startWashingMachine(180);
+    }
+  }, [state.washingMachine.active]);
 
   const exportBackup = async (): Promise<void> => {
     const payload = buildBackupPayload(state);

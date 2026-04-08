@@ -41,6 +41,21 @@ export default defineConfig({
             type: "image/svg+xml",
             purpose: "maskable"
           }
+        ],
+        shortcuts: [
+          {
+            name: "Waschmaschine 3 Stunden",
+            short_name: "Waschmaschine 3h",
+            description: "Startet sofort einen 3-Stunden-Timer fuer die Waschmaschine.",
+            url: "./?shortcut=washing-machine-3h",
+            icons: [
+              {
+                src: "icons/icon-192.svg",
+                sizes: "192x192",
+                type: "image/svg+xml"
+              }
+            ]
+          }
         ]
       },
       workbox: {
@@ -69,4 +84,3 @@ export default defineConfig({
     })
   ]
 });
-
