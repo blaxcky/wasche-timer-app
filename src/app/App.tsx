@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AppStateProvider, useAppState } from "./state";
+import { AppStateProvider, findConflictingTimerByName, useAppState } from "./state";
 import { buildBackupPayload, parseBackupPayload } from "../shared/storage/repository";
 import { resetAppRuntimeCaches } from "../shared/lib/pwa-reset";
 import {
@@ -407,9 +407,20 @@ function AppContent(): JSX.Element {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [confirmDialog]);
 
-  const addTimer = (nameOverride?: string, templateOverride?: LaundryTemplate): void => {
+  const addTimer = async (nameOverride?: string, templateOverride?: LaundryTemplate): Promise<void> => {
     const name = (nameOverride ?? newTimerName).trim();
     if (!name) return;
+
+    const conflictingTimer = findConflictingTimerByName(state.timers, name);
+    if (conflictingTimer) {
+      const confirmed = await requestConfirm({
+        title: "Timer überschreiben",
+        message: `Es läuft bereits ein Timer "${conflictingTimer.name}". Diesen Timer wirklich überschreiben?`,
+        confirmLabel: "Überschreiben",
+        tone: "default"
+      });
+      if (!confirmed) return;
+    }
 
     dispatch({
       type: "ADD_TIMER",
@@ -717,7 +728,7 @@ function AppContent(): JSX.Element {
               </div>
               <div className="quick-actions hero-actions">
                 <button className="btn btn-tonal" onClick={() => setTab("timers")}>Timer verwalten</button>
-                <button className="btn btn-tonal" onClick={() => addTimer("Neue Ladung")}>Schnellstart</button>
+                <button className="btn btn-tonal" onClick={() => void addTimer("Neue Ladung")}>Schnellstart</button>
               </div>
             </div>
 
@@ -880,7 +891,10 @@ function AppContent(): JSX.Element {
                   value={newTimerName}
                   onChange={(event) => setNewTimerName(event.target.value)}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter") addTimer();
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      void addTimer();
+                    }
                   }}
                 />
                 <div
@@ -891,13 +905,13 @@ function AppContent(): JSX.Element {
                     <button
                       key={template.id}
                       className="chip"
-                      onClick={() => addTimer(template.name, template)}
+                      onClick={() => void addTimer(template.name, template)}
                     >
                       <span>{template.emoji}</span> {template.name}
                     </button>
                   ))}
                 </div>
-                <button className="btn btn-primary" onClick={() => addTimer()}>Timer mit Name starten</button>
+                <button className="btn btn-primary" onClick={() => void addTimer()}>Timer mit Name starten</button>
               </div>
             </article>
 

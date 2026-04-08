@@ -1,8 +1,25 @@
 import { describe, expect, it } from "vitest";
 import { createDefaultState, DEFAULT_TARGET_DURATION_SEC } from "../shared/lib/defaults";
-import { reducer } from "./state";
+import { findConflictingTimerByName, reducer } from "./state";
 
 describe("app state reducer", () => {
+  it("finds an existing timer with the same normalized name", () => {
+    const timer = findConflictingTimerByName(
+      [
+        {
+          id: "timer-old",
+          name: "Leifheit Wäscheständer",
+          startAt: "2026-04-06T08:00:00.000Z",
+          targetDurationSec: DEFAULT_TARGET_DURATION_SEC,
+          status: "active" as const
+        }
+      ],
+      "  leifheit wäscheständer  "
+    );
+
+    expect(timer?.id).toBe("timer-old");
+  });
+
   it("replaces an existing timer when adding a new one with the same name", () => {
     const state = {
       ...createDefaultState("2026-04-07T08:00:00.000Z"),

@@ -22,6 +22,17 @@ function normalizeTimerName(name: string): string {
   return name.trim().toLocaleLowerCase();
 }
 
+export function findConflictingTimerByName(
+  timers: LaundryTimer[],
+  name: string,
+  excludeId?: string
+): LaundryTimer | null {
+  const normalizedName = normalizeTimerName(name);
+  if (!normalizedName) return null;
+
+  return timers.find((timer) => timer.id !== excludeId && normalizeTimerName(timer.name) === normalizedName) ?? null;
+}
+
 function replaceTimerWithUniqueName(
   timers: LaundryTimer[],
   nextTimer: LaundryTimer,
