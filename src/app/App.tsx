@@ -197,8 +197,6 @@ function AppContent(): JSX.Element {
   const washingMachineRef = useRef(state.washingMachine);
   washingMachineRef.current = state.washingMachine;
   const launchShortcutHandledRef = useRef(false);
-  const templateRowRef = useRef<HTMLDivElement | null>(null);
-  const [templateRowScrollable, setTemplateRowScrollable] = useState(false);
   const confirmResolveRef = useRef<((result: boolean) => void) | null>(null);
 
   useEffect(() => {
@@ -321,27 +319,6 @@ function AppContent(): JSX.Element {
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [nativeAndroid]);
-
-  useEffect(() => {
-    if (tab !== "timers") return;
-    const node = templateRowRef.current;
-    if (!node) return;
-
-    const updateScrollable = (): void => {
-      setTemplateRowScrollable(node.scrollWidth - node.clientWidth > 4);
-    };
-
-    updateScrollable();
-
-    const observer = "ResizeObserver" in window ? new ResizeObserver(updateScrollable) : null;
-    observer?.observe(node);
-    window.addEventListener("resize", updateScrollable);
-
-    return () => {
-      observer?.disconnect();
-      window.removeEventListener("resize", updateScrollable);
-    };
-  }, [state.templates.length, tab]);
 
   const sortedTimers = useMemo(
     () => [...state.timers].sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()),
@@ -1066,17 +1043,18 @@ function AppContent(): JSX.Element {
                     }
                   }}
                 />
-                <div
-                  ref={templateRowRef}
-                  className={`template-row ${templateRowScrollable ? "template-row-scrollable" : "template-row-centered"}`}
-                >
+                <div className="template-grid">
                   {state.templates.map((template) => (
                     <button
                       key={template.id}
-                      className="chip"
+                      type="button"
+                      className="template-tile"
                       onClick={() => void addTimer(template.name, template)}
+                      aria-label={`${template.name} starten`}
+                      title={template.name}
                     >
-                      <span>{template.emoji}</span> {template.name}
+                      <span className="template-tile-emoji" aria-hidden="true">{template.emoji}</span>
+                      <span className="template-tile-name">{template.name}</span>
                     </button>
                   ))}
                 </div>
