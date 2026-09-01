@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "android:sync": "npm run build && cap sync android",
-    "android:debug": "npm run android:sync && node scripts/android-debug.mjs"
+    "android:debug": "npm run android:sync && node scripts/android-debug.mjs",
+    "android:release": "npm run android:sync && node scripts/android-release.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",
