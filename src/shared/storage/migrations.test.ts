@@ -83,7 +83,7 @@ describe("storage migrations", () => {
     const loaded = loadState(storage);
     expect(loaded.schemaVersion).toBe(2);
     expect(loaded.settings.defaultWashingPresetsMin).toEqual([60, 90, 120]);
-    expect(loaded.settings.washingMachineWebhookUrl).toBe("https://eo123.m.pipedream.net/");
+    expect(loaded.settings.washingMachineWebhookUrl).toBe("https://eo123.m.pipedream.net");
   });
 
   it("defaults webhook URL to empty string when missing", () => {

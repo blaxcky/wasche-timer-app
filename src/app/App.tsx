@@ -13,6 +13,16 @@ import {
   toDatetimeLocalInput
 } from "../shared/lib/time";
 import { TabId, LaundryTemplate, LaundryTimer } from "../shared/types/models";
+import {
+  cancelWashingMachineNotification,
+  getAndroidNotificationStatus,
+  isNativeAndroid,
+  openAndroidNotificationSettings,
+  openExactAlarmSettings,
+  registerWashingMachineNotificationTap,
+  scheduleWashingMachineNotification,
+  type AndroidNotificationStatus
+} from "../shared/native/android-notifications";
 
 const NAV_ITEMS: Array<{ id: TabId; label: string; icon: string }> = [
   { id: "dashboard", label: "Dashboard", icon: "home" },
@@ -179,8 +189,13 @@ function AppContent(): JSX.Element {
   const [newPresetHours, setNewPresetHours] = useState("2");
   const [newPresetMinutes, setNewPresetMinutes] = useState("50");
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const nativeAndroid = isNativeAndroid();
+  const [androidNotificationStatus, setAndroidNotificationStatus] = useState<AndroidNotificationStatus | null>(null);
+  const [androidNotificationWarning, setAndroidNotificationWarning] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null);
   const washingDoneRef = useRef(false);
+  const washingMachineRef = useRef(state.washingMachine);
+  washingMachineRef.current = state.washingMachine;
   const launchShortcutHandledRef = useRef(false);
   const templateRowRef = useRef<HTMLDivElement | null>(null);
   const [templateRowScrollable, setTemplateRowScrollable] = useState(false);
@@ -215,6 +230,8 @@ function AppContent(): JSX.Element {
   }, [state.washingMachine.active, state.washingMachine.presetMin]);
 
   useEffect(() => {
+    if (nativeAndroid) return;
+
     const onBeforeInstallPrompt = (event: Event): void => {
       event.preventDefault();
       setInstallPrompt(event as BeforeInstallPromptEvent);
@@ -222,7 +239,88 @@ function AppContent(): JSX.Element {
 
     window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
     return () => window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
-  }, []);
+  }, [nativeAndroid]);
+
+  const refreshAndroidNotificationStatus = async (): Promise<void> => {
+    try {
+      const status = await getAndroidNotificationStatus();
+      setAndroidNotificationStatus(status);
+      if (status) {
+        setAndroidNotificationWarning(
+          status.notificationPermission !== "granted" || status.exactAlarmPermission !== "granted"
+        );
+
+        const machine = washingMachineRef.current;
+        if (
+          status.notificationPermission === "granted" &&
+          machine.active &&
+          machine.endAt &&
+          new Date(machine.endAt).getTime() > Date.now()
+        ) {
+          const result = await scheduleWashingMachineNotification(machine.endAt, false);
+          if (result) {
+            setAndroidNotificationStatus(result.status);
+            setAndroidNotificationWarning(result.needsSettings || !result.scheduled);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Android-Benachrichtigungsstatus konnte nicht gelesen werden.", error);
+    }
+  };
+
+  useEffect(() => {
+    if (!nativeAndroid) return;
+
+    let disposed = false;
+    let notificationTapHandle: Awaited<ReturnType<typeof registerWashingMachineNotificationTap>> = null;
+
+    const initialize = async (): Promise<void> => {
+      try {
+        notificationTapHandle = await registerWashingMachineNotificationTap(() => setTab("dashboard"));
+        const status = await getAndroidNotificationStatus();
+        if (!disposed) {
+          setAndroidNotificationStatus(status);
+          if (status) {
+            setAndroidNotificationWarning(
+              status.notificationPermission !== "granted" || status.exactAlarmPermission !== "granted"
+            );
+          }
+        }
+
+        const machine = washingMachineRef.current;
+        const endAt = machine.endAt;
+        if (machine.active && endAt && new Date(endAt).getTime() > Date.now()) {
+          const result = await scheduleWashingMachineNotification(endAt, false);
+          if (!disposed && result) {
+            setAndroidNotificationStatus(result.status);
+            setAndroidNotificationWarning(result.needsSettings || !result.scheduled);
+          }
+        }
+      } catch (error) {
+        console.error("Android-Benachrichtigungen konnten nicht initialisiert werden.", error);
+        if (!disposed) setAndroidNotificationWarning(true);
+      }
+    };
+
+    const onFocus = (): void => {
+      void refreshAndroidNotificationStatus();
+    };
+    const onVisibilityChange = (): void => {
+      if (document.visibilityState === "visible") void refreshAndroidNotificationStatus();
+    };
+
+    void initialize();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      disposed = true;
+      void notificationTapHandle?.remove();
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [nativeAndroid]);
 
   useEffect(() => {
     if (tab !== "timers") return;
@@ -490,6 +588,19 @@ function AppContent(): JSX.Element {
     dispatch({ type: "START_WASHING_MACHINE", payload: { minutes: roundedMinutes, endAt: endAtIso } });
     triggerHaptics(state.settings.hapticsEnabled);
 
+    if (nativeAndroid) {
+      void scheduleWashingMachineNotification(endAtIso, true)
+        .then((result) => {
+          if (!result) return;
+          setAndroidNotificationStatus(result.status);
+          setAndroidNotificationWarning(result.needsSettings || !result.scheduled);
+        })
+        .catch((error) => {
+          console.error("Android-Benachrichtigung konnte nicht geplant werden.", error);
+          setAndroidNotificationWarning(true);
+        });
+    }
+
     dispatchWashingMachineWebhook({
       event: "washing_machine_schedule",
       scheduleId,
@@ -528,6 +639,11 @@ function AppContent(): JSX.Element {
     }
 
     dispatch({ type: "STOP_WASHING_MACHINE" });
+    if (nativeAndroid) {
+      void cancelWashingMachineNotification().catch((error) => {
+        console.error("Android-Benachrichtigung konnte nicht entfernt werden.", error);
+      });
+    }
     if (!shouldSendCancelWebhook || !activeEndAt) return;
 
     dispatchWashingMachineWebhook({
@@ -733,12 +849,27 @@ function AppContent(): JSX.Element {
 
   const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
 
+  const notificationPermissionLabel = androidNotificationStatus?.notificationPermission === "granted"
+    ? "Erlaubt"
+    : androidNotificationStatus?.notificationPermission === "denied"
+      ? "Verweigert"
+      : "Noch nicht erteilt";
+  const exactAlarmPermissionLabel = androidNotificationStatus?.exactAlarmPermission === "granted"
+    ? "Erlaubt"
+    : "Nicht erlaubt (Android plant ungenau)";
+  const openRelevantAndroidSettings = (): Promise<void> =>
+    androidNotificationStatus?.notificationPermission === "granted"
+      ? openExactAlarmSettings()
+      : openAndroidNotificationSettings();
+
   return (
     <div className="app-root">
       <div className="ambient-bg" aria-hidden="true" />
-      <header className="top-bar">
-        <h1>Wäsche-Timer</h1>
-      </header>
+      {!nativeAndroid && (
+        <header className="top-bar">
+          <h1>Wäsche-Timer</h1>
+        </header>
+      )}
 
       <main className="main-pane">
         {tab === "dashboard" && (
@@ -850,6 +981,16 @@ function AppContent(): JSX.Element {
                   </div>
                 </>
               )}
+
+              {nativeAndroid && androidNotificationWarning ? (
+                <div className="notification-warning" role="status">
+                  <strong>Android-Benachrichtigung eingeschränkt</strong>
+                  <p>Der Timer läuft weiter. Android kann die Meldung verspätet oder bei verweigertem Zugriff gar nicht anzeigen.</p>
+                  <button className="btn btn-tonal" onClick={() => void openRelevantAndroidSettings()}>
+                    Systemeinstellungen öffnen
+                  </button>
+                </div>
+              ) : null}
             </article>
 
             <article className="card">
@@ -987,6 +1128,26 @@ function AppContent(): JSX.Element {
 
         {tab === "settings" && (
           <section className="tab-screen">
+            {nativeAndroid ? (
+              <article className="card">
+                <div className="section-head">
+                  <h3>Android-Benachrichtigungen</h3>
+                </div>
+                <dl className="permission-status-list">
+                  <div><dt>Benachrichtigungen</dt><dd>{notificationPermissionLabel}</dd></div>
+                  <div><dt>Exakte Alarme</dt><dd>{exactAlarmPermissionLabel}</dd></div>
+                </dl>
+                <p className="muted">Ohne exakte Alarme darf Android die Fertigmeldung zeitlich verzögert zustellen.</p>
+                <div className="quick-actions">
+                  <button className="btn btn-tonal" onClick={() => void openAndroidNotificationSettings()}>
+                    Benachrichtigungen verwalten
+                  </button>
+                  <button className="btn btn-tonal" onClick={() => void openExactAlarmSettings()}>
+                    Exakte Alarme verwalten
+                  </button>
+                </div>
+              </article>
+            ) : null}
             <article className="card">
               <div className="section-head">
                 <h3>Backup</h3>
@@ -1136,33 +1297,37 @@ function AppContent(): JSX.Element {
               </div>
             </article>
 
-            <article className="card">
-              <div className="section-head">
-                <h3>Installation</h3>
-              </div>
-              <p className="muted">
-                {isStandalone
-                  ? "App läuft bereits im Standalone-Modus."
-                  : installPrompt
-                  ? "App kann jetzt auf dem Homescreen installiert werden."
-                  : "Install-Prompt aktuell nicht verfügbar. Auf Android über Browser-Menü installierbar."}
-              </p>
-              {installPrompt ? (
-                <button className="btn btn-primary" onClick={installApp}>Jetzt installieren</button>
-              ) : null}
-            </article>
+            {!nativeAndroid ? (
+              <>
+                <article className="card">
+                  <div className="section-head">
+                    <h3>Installation</h3>
+                  </div>
+                  <p className="muted">
+                    {isStandalone
+                      ? "App läuft bereits im Standalone-Modus."
+                      : installPrompt
+                      ? "App kann jetzt auf dem Homescreen installiert werden."
+                      : "Install-Prompt aktuell nicht verfügbar. Auf Android über Browser-Menü installierbar."}
+                  </p>
+                  {installPrompt ? (
+                    <button className="btn btn-primary" onClick={installApp}>Jetzt installieren</button>
+                  ) : null}
+                </article>
 
-            <article className="card">
-              <div className="section-head">
-                <h3>Wartung</h3>
-              </div>
-              <p className="muted">Setzt Service Worker und Browser-Cache zurück, ohne deine Timer-Daten zu löschen.</p>
-              <div className="quick-actions maintenance-actions">
-                <button className="btn btn-tonal" onClick={resetRuntimeAndReload}>
-                  App neu laden (Cache zurücksetzen)
-                </button>
-              </div>
-            </article>
+                <article className="card">
+                  <div className="section-head">
+                    <h3>Wartung</h3>
+                  </div>
+                  <p className="muted">Setzt Service Worker und Browser-Cache zurück, ohne deine Timer-Daten zu löschen.</p>
+                  <div className="quick-actions maintenance-actions">
+                    <button className="btn btn-tonal" onClick={resetRuntimeAndReload}>
+                      App neu laden (Cache zurücksetzen)
+                    </button>
+                  </div>
+                </article>
+              </>
+            ) : null}
           </section>
         )}
       </main>

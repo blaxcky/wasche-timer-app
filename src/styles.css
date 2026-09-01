@@ -72,7 +72,7 @@ button:focus-visible {
   height: 100svh;
   height: var(--app-height, 100svh);
   overflow: hidden;
-  padding: 0.85rem 1rem 0;
+  padding: calc(0.85rem + var(--safe-area-inset-top, env(safe-area-inset-top, 0px))) 1rem 0;
 }
 
 .ambient-bg {
@@ -86,6 +86,7 @@ button:focus-visible {
 }
 
 .top-bar {
+  grid-row: 1;
   position: relative;
   display: flex;
   justify-content: space-between;
@@ -110,6 +111,7 @@ button:focus-visible {
 }
 
 .main-pane {
+  grid-row: 2;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior-y: contain;
@@ -128,6 +130,50 @@ button:focus-visible {
   border: 1px solid rgba(12, 72, 100, 0.07);
   box-shadow: var(--shadow-1);
   padding: 1rem;
+}
+
+.notification-warning {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.85rem;
+  padding: 0.8rem;
+  border: 1px solid rgba(179, 38, 30, 0.24);
+  border-radius: 14px;
+  background: #fff5f4;
+  color: #6f1d18;
+}
+
+.notification-warning p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.notification-warning .btn {
+  justify-self: start;
+}
+
+.permission-status-list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.7rem 0;
+}
+
+.permission-status-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.permission-status-list dt {
+  font-weight: 700;
+}
+
+.permission-status-list dd {
+  margin: 0;
+  color: var(--muted);
+  text-align: right;
 }
 
 .hero-card {
@@ -908,6 +954,7 @@ button:focus-visible {
 }
 
 .bottom-nav {
+  grid-row: 3;
   flex: 0 0 auto;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -917,7 +964,7 @@ button:focus-visible {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 250, 253, 0.98));
   box-shadow: 0 -10px 24px rgba(6, 40, 61, 0.08);
-  padding: 0.45rem 1rem calc(0.45rem + env(safe-area-inset-bottom));
+  padding: 0.45rem 1rem calc(0.45rem + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
 }
 
 .nav-item {
