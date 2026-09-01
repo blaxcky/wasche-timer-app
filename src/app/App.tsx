@@ -5,9 +5,7 @@ import { parseAppShortcutAction, stripAppShortcutParam, WASHING_MACHINE_THREE_HO
 import { resetAppRuntimeCaches } from "../shared/lib/pwa-reset";
 import {
   elapsedSeconds,
-  formatDateTime,
   formatDuration,
-  formatDurationDaysHours,
   formatDurationDaysHoursWords,
   fromDatetimeLocalInput,
   toDatetimeLocalInput
@@ -24,6 +22,7 @@ import {
   type AndroidNotificationStatus
 } from "../shared/native/android-notifications";
 import { exportAndroidBackup } from "../shared/native/android-backup";
+import { TimerCard } from "./TimerCard";
 
 const NAV_ITEMS: Array<{ id: TabId; label: string; icon: string }> = [
   { id: "dashboard", label: "Dashboard", icon: "home" },
@@ -1092,42 +1091,16 @@ function AppContent(): JSX.Element {
               </article>
             ) : (
               <div className="timer-list">
-                {sortedTimers.map((timer, index) => {
-                  const elapsed = elapsedSeconds(timer.startAt, now);
-                  const remaining = Math.max(0, timer.targetDurationSec - elapsed);
-                  const progress = Math.min(100, Math.round((elapsed / timer.targetDurationSec) * 100));
-                  const reached = elapsed >= timer.targetDurationSec;
-
-                  return (
-                    <article key={timer.id} className="card timer-card" style={{ animationDelay: `${index * 40}ms` }}>
-                      <div className="timer-head">
-                        <div>
-                          <h3>{timer.name}</h3>
-                          <p>Seit {formatDateTime(timer.startAt)}</p>
-                        </div>
-                        <span className={`badge ${reached ? "badge-success" : "badge-info"}`}>
-                          {reached ? "Ziel erreicht" : "Aktiv"}
-                        </span>
-                      </div>
-
-                      <p className="big-timer">{formatDurationDaysHours(elapsed)}</p>
-                      <p className="muted">{reached ? "Trocknungsziel ist erreicht." : `Noch ${formatDurationDaysHours(remaining)}`}</p>
-                      <div className="progress-track">
-                        <div className="progress-bar" style={{ width: `${progress}%` }} />
-                      </div>
-
-                      <div className="timer-meta">
-                        <span>Ziel: 3 Tage</span>
-                        <span>{progress}%</span>
-                      </div>
-
-                      <div className="timer-actions">
-                        <button className="btn btn-text" onClick={() => openEditor(timer)}>Bearbeiten</button>
-                        <button className="btn btn-danger" onClick={() => deleteTimer(timer.id)}>Löschen</button>
-                      </div>
-                    </article>
-                  );
-                })}
+                {sortedTimers.map((timer, index) => (
+                  <TimerCard
+                    key={timer.id}
+                    timer={timer}
+                    now={now}
+                    listIndex={index}
+                    onEdit={openEditor}
+                    onDelete={(id) => void deleteTimer(id)}
+                  />
+                ))}
               </div>
             )}
           </section>

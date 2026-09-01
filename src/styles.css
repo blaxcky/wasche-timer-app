@@ -794,17 +794,38 @@ button:focus-visible {
 .timer-card {
   animation: rise-in 280ms ease both;
   padding: 1.05rem;
+  margin: 0;
+  border: 1px solid rgba(12, 72, 100, 0.07);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  color: #11202b;
+  overflow: visible;
+  transition: border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+}
+
+.timer-card-done {
+  border-color: rgba(32, 105, 60, 0.25);
+  background: #f3faf5;
+  box-shadow: 0 8px 20px rgba(32, 105, 60, 0.1);
 }
 
 .timer-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.7rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.75rem;
+}
+
+.timer-title-block {
+  min-width: 0;
 }
 
 .timer-head h3 {
   margin: 0;
   font-size: 1.05rem;
+  line-height: 1.28;
+  overflow-wrap: anywhere;
 }
 
 .timer-head p {
@@ -823,36 +844,22 @@ button:focus-visible {
   line-height: 1.36;
 }
 
-.badge {
-  height: fit-content;
-  font-size: 0.72rem;
-  font-weight: 700;
-  border-radius: 999px;
-  padding: 0.3rem 0.52rem;
-}
-
-.badge-info {
-  background: #e4f5fb;
-  color: var(--primary-strong);
-}
-
-.badge-success {
-  background: #d9f2e1;
-  color: var(--success);
-}
-
-.progress-track {
+.timer-progress {
   margin-top: 0.55rem;
   height: 10px;
   border-radius: 999px;
-  background: #dce8f1;
   overflow: hidden;
+  --background: #dce8f1;
+  --progress-background: var(--primary);
 }
 
-.progress-bar {
-  height: 100%;
-  background: linear-gradient(90deg, #0d5f7f, #22a0cf);
-  transition: width 260ms ease;
+.timer-card-done .timer-progress {
+  --background: #d9eadf;
+  --progress-background: var(--success);
+}
+
+.timer-card-done > .muted {
+  color: var(--success);
 }
 
 .timer-meta {
@@ -865,15 +872,44 @@ button:focus-visible {
 }
 
 .timer-actions {
-  margin-top: 0.9rem;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: repeat(2, 44px);
+  gap: 0.25rem;
 }
 
-.timer-actions .btn {
-  width: 100%;
-  min-height: 42px;
+.timer-icon-button {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  margin: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  --border-radius: 12px;
+  --color: var(--primary-strong);
+  --background-hover: rgba(13, 95, 127, 0.08);
+  --background-activated: rgba(13, 95, 127, 0.14);
+  transition: transform 120ms ease;
+}
+
+.timer-icon-button ion-icon {
+  width: 21px;
+  height: 21px;
+}
+
+.timer-icon-button:active {
+  transform: scale(0.96);
+}
+
+.timer-icon-button:focus-visible {
+  outline: 2px solid #2a89ad;
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+.timer-delete-button {
+  --color: var(--danger);
+  --background-hover: rgba(179, 38, 30, 0.08);
+  --background-activated: rgba(179, 38, 30, 0.14);
 }
 
 .history-list {
@@ -1071,10 +1107,6 @@ button:focus-visible {
 
   .dashboard-overview-grid {
     grid-template-columns: 1fr;
-  }
-
-  .timer-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .machine-custom-grid {
