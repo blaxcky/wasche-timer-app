@@ -17,6 +17,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(AndroidSettingsPlugin.class);
+        registerPlugin(AndroidBackupPlugin.class);
         createWashingMachineNotificationChannel();
         super.onCreate(savedInstanceState);
     }

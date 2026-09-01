@@ -23,6 +23,7 @@ import {
   scheduleWashingMachineNotification,
   type AndroidNotificationStatus
 } from "../shared/native/android-notifications";
+import { exportAndroidBackup } from "../shared/native/android-backup";
 
 const NAV_ITEMS: Array<{ id: TabId; label: string; icon: string }> = [
   { id: "dashboard", label: "Dashboard", icon: "home" },
@@ -676,11 +677,17 @@ function AppContent(): JSX.Element {
   const exportBackup = async (): Promise<void> => {
     const payload = buildBackupPayload(state);
     const json = JSON.stringify(payload, null, 2);
+    const fileName = `wäsche-timer-backup-${new Date().toISOString().slice(0, 10)}.json`;
 
     try {
+      if (nativeAndroid) {
+        await exportAndroidBackup(json, fileName);
+        return;
+      }
+
       if (window.showSaveFilePicker) {
         const fileHandle = await window.showSaveFilePicker({
-          suggestedName: `wäsche-timer-backup-${new Date().toISOString().slice(0, 10)}.json`,
+          suggestedName: fileName,
           types: [
             {
               description: "Wäsche-Timer Backup",
@@ -697,7 +704,7 @@ function AppContent(): JSX.Element {
         const url = URL.createObjectURL(blob);
         const anchor = document.createElement("a");
         anchor.href = url;
-        anchor.download = `wäsche-timer-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        anchor.download = fileName;
         anchor.click();
         URL.revokeObjectURL(url);
       }
