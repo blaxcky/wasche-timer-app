@@ -53,18 +53,18 @@ export function TimerCard({ timer, now, listIndex, onEdit, onDelete }: TimerCard
       </div>
 
       <p className="big-timer">{formatDurationDaysHours(elapsed)}</p>
-      <p className="muted">{reached ? "Trocknungsziel erreicht." : `Noch ${formatDurationDaysHours(remaining)}`}</p>
+      <div className="timer-progress-summary">
+        <p className="muted">
+          {reached ? "Trocknungsziel erreicht." : `Noch ${formatDurationDaysHours(remaining)}`}
+        </p>
+        <span>{progress}%</span>
+      </div>
 
       <IonProgressBar
         className="timer-progress"
         value={progress / 100}
         aria-label={`Trocknungsfortschritt: ${progress} Prozent`}
       />
-
-      <div className="timer-meta">
-        <span>Ziel: {formatDurationDaysHours(timer.targetDurationSec)}</span>
-        <span>{progress}%</span>
-      </div>
     </IonCard>
   );
 }

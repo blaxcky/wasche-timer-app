@@ -10,7 +10,7 @@ function renderTimerCard(timer: LaundryTimer, now: Date): string {
 }
 
 describe("TimerCard", () => {
-  it("renders a running timer without status badges and with a dynamic target", () => {
+  it("renders a running timer without status badges or a separate target row", () => {
     const markup = renderTimerCard(
       {
         id: "timer-running",
@@ -22,9 +22,9 @@ describe("TimerCard", () => {
       new Date("2026-09-02T10:00:00.000Z")
     );
 
-    expect(markup).toContain("Ziel: 4d");
     expect(markup).toContain("25%");
     expect(markup).toContain("Noch 3d");
+    expect(markup).not.toContain("Ziel:");
     expect(markup).not.toContain("&gt;Aktiv&lt;");
     expect(markup).not.toContain("Ziel erreicht");
     expect(markup).toContain('aria-label="Sehr lange Bezeichnung für den Wäscheständer im Gästezimmer bearbeiten"');
@@ -44,9 +44,9 @@ describe("TimerCard", () => {
     );
 
     expect(markup).toContain("Trocknungsziel erreicht.");
-    expect(markup).toContain("Ziel: 2d");
     expect(markup).toContain("100%");
     expect(markup).toContain("Trocknungsfortschritt: 100 Prozent");
+    expect(markup).not.toContain("Ziel:");
     expect(markup).not.toContain("Noch ");
   });
 });

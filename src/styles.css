@@ -839,13 +839,27 @@ button:focus-visible {
   line-height: 1.08;
 }
 
-.timer-card .muted {
+.timer-progress-summary {
   margin-top: 0.24rem;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.timer-progress-summary .muted {
   line-height: 1.36;
 }
 
+.timer-progress-summary > span {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
 .timer-progress {
-  margin-top: 0.55rem;
+  margin-top: 0.4rem;
   height: 10px;
   border-radius: 999px;
   overflow: hidden;
@@ -858,17 +872,8 @@ button:focus-visible {
   --progress-background: var(--success);
 }
 
-.timer-card-done > .muted {
+.timer-card-done .timer-progress-summary .muted {
   color: var(--success);
-}
-
-.timer-meta {
-  margin-top: 0.62rem;
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-  color: var(--muted);
-  font-size: 0.82rem;
 }
 
 .timer-actions {
