@@ -2,10 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
-const repositoryName = process.env.GITHUB_REPOSITORY?.split("/")[1];
-const resolvedBase =
-  process.env.VITE_BASE_PATH ??
-  (process.env.GITHUB_ACTIONS === "true" && repositoryName ? `/${repositoryName}/` : "/");
+const resolvedBase = process.env.VITE_BASE_PATH ?? "/";
 
 export default defineConfig({
   base: resolvedBase,
