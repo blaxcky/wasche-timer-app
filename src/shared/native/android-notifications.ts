@@ -143,6 +143,8 @@ export async function scheduleWashingMachineNotification(
         channelId: WASHING_MACHINE_CHANNEL_ID,
         title: "Waschmaschine fertig",
         body: "Die Wäsche ist fertig.",
+        ongoing: true,
+        autoCancel: false,
         schedule: {
           at,
           allowWhileIdle: true

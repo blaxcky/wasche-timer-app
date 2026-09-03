@@ -67,6 +67,8 @@ describe("Android washing-machine notifications", () => {
         title: "Waschmaschine fertig",
         body: "Die Wäsche ist fertig.",
         channelId: WASHING_MACHINE_CHANNEL_ID,
+        ongoing: true,
+        autoCancel: false,
         isExactNotification: true,
         schedule: {
           at: new Date("2026-08-24T10:30:00.000Z"),
